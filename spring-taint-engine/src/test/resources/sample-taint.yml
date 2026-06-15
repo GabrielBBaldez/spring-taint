@@ -1,0 +1,13 @@
+spring-sources:
+  - annotation: org.springframework.web.bind.annotation.RequestParam
+  - annotation: org.springframework.web.bind.annotation.RequestBody
+
+sources:
+  - { kind: call, method: "<jakarta.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>", index: result }
+
+sinks:
+  - { vuln: sql-injection, method: "<org.springframework.jdbc.core.JdbcTemplate: void execute(java.lang.String)>", index: 0 }
+  - { vuln: xss, method: "<java.io.PrintWriter: void write(java.lang.String)>", index: 0 }
+
+sanitizers:
+  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String)>", index: result }

@@ -1,0 +1,100 @@
+# Ground truth for the Spring Taint benchmark.
+#
+# Each case declares whether a taint flow is expected (`expected: true`) or the
+# flow is safe and must NOT be reported (`expected: false`). Positive cases
+# measure recall; safe cases measure precision. Sources and sinks are located by
+# the `taint-source:` / `taint-sink:` marker comments in the referenced files.
+#
+# Paths are relative to this module (spring-taint-benchmark/).
+
+benchmark: spring-taint-benchmark
+version: 0.1.0
+base: src/main/java/io/github/gabrielbbaldez/springtaint/benchmark
+
+cases:
+  - id: sqli-direct
+    category: sql-injection
+    cwe: CWE-89
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: sqli/direct/SqliDirectController.java
+    sinkFile: sqli/direct/SqliDirectController.java
+    note: "source and sink in the same method; baseline (a same-function analyzer also detects it)"
+
+  - id: sqli-through-service
+    category: sql-injection
+    cwe: CWE-89
+    severity: critical
+    expected: true
+    crossLayer: true
+    flow: [Controller, Service, Repository]
+    sourceFile: sqli/throughservice/UserController.java
+    sinkFile: sqli/throughservice/UserRepository.java
+    note: "flagship: taint crosses three layers; a same-function analyzer cannot see it"
+
+  - id: sqli-via-kafka
+    category: sql-injection
+    cwe: CWE-89
+    severity: critical
+    expected: true
+    crossLayer: true
+    phase: 2
+    sourceFile: sqli/viakafka/KafkaSqliListener.java
+    sinkFile: sqli/viakafka/KafkaSqliListener.java
+    note: "source is a @KafkaListener payload (no explicit call site); modelled via Tai-e param source"
+
+  - id: sqli-safe-parameterized
+    category: sql-injection
+    cwe: CWE-89
+    expected: false
+    crossLayer: true
+    sourceFile: sqli/safe/SafeUserController.java
+    sinkFile: sqli/safe/SafeUserRepository.java
+    note: "value bound via NamedParameterJdbcTemplate; must NOT be flagged"
+
+  - id: xss-reflected
+    category: xss
+    cwe: CWE-79
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: xss/reflected/ReflectedXssController.java
+    sinkFile: xss/reflected/ReflectedXssController.java
+    note: "request parameter written to the response writer without escaping"
+
+  - id: xss-safe-escaped
+    category: xss
+    cwe: CWE-79
+    expected: false
+    crossLayer: false
+    sourceFile: xss/safe/SafeXssController.java
+    sinkFile: xss/safe/SafeXssController.java
+    note: "value passes through HtmlUtils.htmlEscape; must NOT be flagged"
+
+  - id: path-traversal-direct
+    category: path-traversal
+    cwe: CWE-22
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: pathtraversal/direct/PathTraversalController.java
+    sinkFile: pathtraversal/direct/PathTraversalController.java
+    note: "untrusted filename concatenated into a filesystem path (new File)"
+
+  - id: cmdi-direct
+    category: command-injection
+    cwe: CWE-78
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: cmdi/direct/CommandInjectionController.java
+    sinkFile: cmdi/direct/CommandInjectionController.java
+    note: "untrusted host concatenated into Runtime.exec"
+
+# Convenience totals (kept in sync by hand for now).
+summary:
+  total: 8
+  expectedVulnerable: 6
+  expectedSafe: 2
+  categories: [sql-injection, xss, path-traversal, command-injection]

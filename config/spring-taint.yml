@@ -1,0 +1,82 @@
+# Spring Taint Analyzer - default taint configuration
+#
+# This file has two parts:
+#
+#   1. `spring-sources` - Spring-aware entry points (annotations). These are NOT
+#      plain Tai-e config: the engine's Spring layer discovers methods carrying
+#      these annotations and generates a Tai-e `param` source for each, because
+#      annotation-driven entry points have no explicit call site.
+#
+#   2. `sinks` and `sanitizers` - concrete library method signatures in Tai-e's
+#      native format (`<Class: ReturnType method(ParamTypes)>`). These are passed
+#      straight through to Tai-e's taint analysis.
+#
+# Teams can extend any section; see README "Extensibility".
+
+# ---------------------------------------------------------------------------
+# 1. Spring source annotations -> generated as Tai-e `param` sources
+# ---------------------------------------------------------------------------
+spring-sources:
+  # Spring MVC request inputs (Phase 1)
+  - annotation: org.springframework.web.bind.annotation.RequestParam
+  - annotation: org.springframework.web.bind.annotation.PathVariable
+  - annotation: org.springframework.web.bind.annotation.RequestBody
+  - annotation: org.springframework.web.bind.annotation.RequestHeader
+  - annotation: org.springframework.web.bind.annotation.CookieValue
+  - annotation: org.springframework.web.bind.annotation.ModelAttribute
+
+  # Messaging inputs (Phase 2 - differential vs. existing OSS tools)
+  - annotation: org.springframework.kafka.annotation.KafkaListener
+    note: "payload parameter (and ConsumerRecord key/value) is tainted"
+
+# Servlet API sources that ARE concrete calls (returned value is tainted)
+sources:
+  - { kind: call, method: "<jakarta.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>", index: result }
+  - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>", index: result }
+  - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getQueryString()>", index: result }
+
+# ---------------------------------------------------------------------------
+# 2. Sinks (concrete library signatures, Tai-e native format)
+# ---------------------------------------------------------------------------
+sinks:
+  # --- SQL Injection (CWE-89) ---
+  - { vuln: sql-injection, method: "<org.springframework.jdbc.core.JdbcTemplate: java.util.List query(java.lang.String,org.springframework.jdbc.core.RowMapper)>", index: 0 }
+  - { vuln: sql-injection, method: "<org.springframework.jdbc.core.JdbcTemplate: void execute(java.lang.String)>", index: 0 }
+  - { vuln: sql-injection, method: "<org.springframework.jdbc.core.JdbcTemplate: int update(java.lang.String)>", index: 0 }
+  - { vuln: sql-injection, method: "<java.sql.Statement: boolean execute(java.lang.String)>", index: 0 }
+  - { vuln: sql-injection, method: "<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>", index: 0 }
+  - { vuln: sql-injection, method: "<jakarta.persistence.EntityManager: jakarta.persistence.Query createNativeQuery(java.lang.String)>", index: 0 }
+
+  # --- Command Injection (CWE-78) ---
+  - { vuln: command-injection, method: "<java.lang.Runtime: java.lang.Process exec(java.lang.String)>", index: 0 }
+  - { vuln: command-injection, method: "<java.lang.ProcessBuilder: void <init>(java.lang.String[])>", index: 0 }
+
+  # --- Path Traversal (CWE-22) ---
+  - { vuln: path-traversal, method: "<java.io.File: void <init>(java.lang.String)>", index: 0 }
+  - { vuln: path-traversal, method: "<java.io.FileInputStream: void <init>(java.lang.String)>", index: 0 }
+  - { vuln: path-traversal, method: "<java.nio.file.Paths: java.nio.file.Path get(java.lang.String,java.lang.String[])>", index: 0 }
+
+  # --- Reflected/Stored XSS (CWE-79) ---
+  - { vuln: xss, method: "<jakarta.servlet.ServletOutputStream: void print(java.lang.String)>", index: 0 }
+  - { vuln: xss, method: "<java.io.PrintWriter: void write(java.lang.String)>", index: 0 }
+  - { vuln: xss, method: "<java.io.PrintWriter: void print(java.lang.String)>", index: 0 }
+
+  # --- SSRF (CWE-918) ---
+  - { vuln: ssrf, method: "<org.springframework.web.client.RestTemplate: java.lang.Object getForObject(java.lang.String,java.lang.Class,java.lang.Object[])>", index: 0 }
+
+  # --- Open Redirect (CWE-601) ---
+  - { vuln: open-redirect, method: "<jakarta.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>", index: 0 }
+
+  # --- SpEL Injection (CWE-917) ---
+  - { vuln: spel-injection, method: "<org.springframework.expression.ExpressionParser: org.springframework.expression.Expression parseExpression(java.lang.String)>", index: 0 }
+
+# ---------------------------------------------------------------------------
+# 3. Sanitizers (taint is cleared at the returned value)
+# ---------------------------------------------------------------------------
+sanitizers:
+  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String)>", index: result }
+  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String,java.lang.String)>", index: result }
+  # Parameterized JDBC binding is modelled as a sanitizer for the bound value.
+  # NamedParameterJdbcTemplate / PreparedStatement carry user data as bound
+  # parameters, not as concatenated SQL text.
+  - { method: "<org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate: java.util.List query(java.lang.String,org.springframework.jdbc.core.namedparam.SqlParameterSource,org.springframework.jdbc.core.RowMapper)>", index: result }
