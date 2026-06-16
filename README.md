@@ -130,14 +130,15 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **19 cases (16 vulnerable, 3 safe)** across SQL injection
-(direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected &
-conditional-sanitizer XSS, SSRF, SpEL injection, path traversal, command injection,
-and open redirect — with sources from Spring (`@RequestParam`, `@PathVariable`,
-`@RequestBody`, `@RequestHeader`), `@KafkaListener`, and JAX-RS (`@QueryParam`).
-Ground truth is in [`expected.yml`](spring-taint-benchmark/expected.yml).
+The benchmark has **20 cases (17 vulnerable, 3 safe)** across SQL injection
+(direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected,
+conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL injection, path
+traversal, command injection, and open redirect — with sources from Spring
+(`@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`),
+`@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads. Ground truth is
+in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **16/16 vulnerable cases detected, 0 false positives** on
+Current engine result: **17/17 vulnerable cases detected, 0 false positives** on
 the 3 safe cases. Full table: [benchmark README](spring-taint-benchmark/README.md).
 Per-rule reference: [docs/rules.md](docs/rules.md).
 
@@ -272,7 +273,8 @@ benchmark on every push — see [`.github/workflows/ci.yml`](.github/workflows/c
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **16/16 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut)
+- [x] precision/recall on the current benchmark — **17/17 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads)
+- [x] Phase 2 differentiators: `@KafkaListener` source, conditional sanitizers, stored / second-order injection
 - [x] GitHub Action (Docker) + self-contained jar + CI workflow
 - [ ] Public release v0.1.0
 

@@ -2,10 +2,12 @@ package io.github.gabrielbbaldez.springtaint.engine.taie;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pascal.taie.analysis.pta.plugin.taint.CallSource;
 import pascal.taie.analysis.pta.plugin.taint.IndexRef;
 import pascal.taie.analysis.pta.plugin.taint.ParamSource;
 import pascal.taie.analysis.pta.plugin.taint.Source;
 import pascal.taie.analysis.pta.plugin.taint.TaintConfigProvider;
+import pascal.taie.analysis.pta.plugin.util.InvokeUtils;
 import pascal.taie.language.classes.ClassHierarchy;
 import pascal.taie.language.classes.JClass;
 import pascal.taie.language.classes.JMethod;
@@ -35,20 +37,49 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
         super(hierarchy, typeSystem);
     }
 
+    private static final String REPOSITORY_ANNOTATION = "org.springframework.stereotype.Repository";
+    private static final String STRING_TYPE = "java.lang.String";
+
     @Override
     protected List<Source> sources() {
         List<Source> sources = new ArrayList<>();
+        int paramSources = 0;
+        int storeSources = 0;
         for (JClass clazz : hierarchy.applicationClasses().toList()) {
+            boolean isRepository = clazz.hasAnnotation(REPOSITORY_ANNOTATION);
             for (JMethod method : clazz.getDeclaredMethods()) {
+                // Annotation-driven request inputs.
                 for (int index : SpringSources.taintedParams(method)) {
                     Type type = method.getParamType(index);
                     sources.add(new ParamSource(method,
                             new IndexRef(IndexRef.Kind.VAR, index, null), type));
+                    paramSources++;
+                }
+                // Persistence reads: data returned by a @Repository read method is
+                // untrusted (it may have been stored by an earlier request) — this
+                // models stored / second-order injection. Limited to String returns
+                // to stay precise.
+                if (isRepository && isPersistenceRead(method)) {
+                    sources.add(new CallSource(method,
+                            new IndexRef(IndexRef.Kind.VAR, InvokeUtils.RESULT, null),
+                            method.getReturnType()));
+                    storeSources++;
                 }
             }
         }
-        log.info("Spring layer: generated {} param source(s)", sources.size());
+        log.info("Spring layer: generated {} param source(s) and {} persistence-read source(s)",
+                paramSources, storeSources);
         return sources;
+    }
+
+    /** A @Repository read method ({@code find*}/{@code get*}/...) returning a String. */
+    private static boolean isPersistenceRead(JMethod method) {
+        if (method.isStatic() || !STRING_TYPE.equals(method.getReturnType().getName())) {
+            return false;
+        }
+        String name = method.getName();
+        return name.startsWith("find") || name.startsWith("get") || name.startsWith("read")
+                || name.startsWith("query") || name.startsWith("load") || name.startsWith("search");
     }
 
     /**

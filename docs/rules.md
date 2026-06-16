@@ -16,6 +16,14 @@ External input is taint. Recognized entry points:
 | JAX-RS / Quarkus | `@QueryParam`, `@PathParam`, `@HeaderParam`, `@FormParam`, `@CookieParam` |
 | Micronaut | `@QueryValue`, `@PathVariable`, `@Body`, `@Header` |
 | Servlet | `HttpServletRequest.getParameter/getHeader/getQueryString` |
+| Persistence | `@Repository` read methods returning `String` (`find*`/`get*`/`read*`/...) |
+
+**Stored / second-order injection.** Data returned by a `@Repository` read method
+is treated as untrusted, because an earlier request may have stored attacker input.
+This catches cross-request flows (e.g. stored XSS: saved in one request, rendered in
+another) that same-request analyzers miss. It is intentionally conservative — any
+`@Repository` `String` read that reaches a sink is reported — so it trades some
+precision for recall on second-order flows.
 
 ---
 

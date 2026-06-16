@@ -196,15 +196,26 @@ cases:
     sinkFile: jaxrs/JaxRsSqliController.java
     note: "source is JAX-RS @QueryParam (Quarkus / Jakarta REST)"
 
+  # ---------------- Stored / second-order injection ----------------
+  - id: stored-xss
+    category: xss
+    severity: high
+    expected: true
+    crossLayer: true
+    flow: [SaveController, "@Repository", ReadController]
+    sourceFile: storedinjection/StoredXssReadController.java
+    sinkFile: storedinjection/StoredXssReadController.java
+    note: "cross-request: persisted by one request, read (as untrusted) and rendered by another"
+
 # Totals (kept in sync by hand).
 summary:
-  total: 19
-  expectedVulnerable: 16
+  total: 20
+  expectedVulnerable: 17
   expectedSafe: 3
   categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
-  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener, "JAX-RS QueryParam"]
+  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener, "JAX-RS QueryParam", "@Repository read (stored)"]
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut]
   # Current engine results on this benchmark:
-  detectedVulnerable: 16   # all vulnerable cases
+  detectedVulnerable: 17   # all vulnerable cases
   falsePositives: 0
   knownGaps: []

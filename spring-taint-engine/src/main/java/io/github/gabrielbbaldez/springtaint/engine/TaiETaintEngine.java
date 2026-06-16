@@ -3,6 +3,7 @@ package io.github.gabrielbbaldez.springtaint.engine;
 import io.github.gabrielbbaldez.springtaint.config.SanitizerSpec;
 import io.github.gabrielbbaldez.springtaint.config.SinkSpec;
 import io.github.gabrielbbaldez.springtaint.config.TaintConfig;
+import io.github.gabrielbbaldez.springtaint.config.TransferSpec;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringEntryPointPlugin;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringLibraryModelPlugin;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringTaintConfigProvider;
@@ -139,6 +140,14 @@ public final class TaiETaintEngine implements TaintEngine {
             for (SanitizerSpec sanitizer : paramSanitizers) {
                 yaml.append("  - { method: \"").append(sanitizer.method())
                         .append("\", index: \"").append(sanitizer.index()).append("\" }\n");
+            }
+        }
+        if (!config.transfers().isEmpty()) {
+            yaml.append("transfers:\n");
+            for (TransferSpec transfer : config.transfers()) {
+                yaml.append("  - { method: \"").append(transfer.method())
+                        .append("\", from: \"").append(transfer.from())
+                        .append("\", to: \"").append(transfer.to()).append("\" }\n");
             }
         }
         Files.writeString(dir.resolve("spring-sinks.yml"), yaml.toString());

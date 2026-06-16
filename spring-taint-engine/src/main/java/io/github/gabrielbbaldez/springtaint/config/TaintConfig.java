@@ -14,12 +14,14 @@ public record TaintConfig(
         @JsonProperty("spring-sources") List<SpringSource> springSources,
         List<SourceSpec> sources,
         List<SinkSpec> sinks,
-        List<SanitizerSpec> sanitizers) {
+        List<SanitizerSpec> sanitizers,
+        List<TransferSpec> transfers) {
 
     public TaintConfig {
         springSources = (springSources == null) ? List.of() : List.copyOf(springSources);
         sources = (sources == null) ? List.of() : List.copyOf(sources);
         sinks = (sinks == null) ? List.of() : List.copyOf(sinks);
         sanitizers = (sanitizers == null) ? List.of() : List.copyOf(sanitizers);
+        transfers = (transfers == null) ? List.of() : List.copyOf(transfers);
     }
 }

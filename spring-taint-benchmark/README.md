@@ -38,12 +38,13 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `request-header-xss` | XSS (CWE-79) | no — `@RequestHeader` source | vulnerable | ✅ |
 | `webflux-sqli` | SQL injection (CWE-89) | reactive — R2DBC `DatabaseClient` | vulnerable | ✅ |
 | `jaxrs-sqli` | SQL injection (CWE-89) | JAX-RS `@QueryParam` (Quarkus) | vulnerable | ✅ |
+| `stored-xss` | XSS (CWE-79) | cross-request — `@Repository` read | vulnerable | ✅ |
 
-**16 vulnerable, 3 safe.** Current engine result: **16/16 detected, 0 false positives.**
+**17 vulnerable, 3 safe.** Current engine result: **17/17 detected, 0 false positives.**
 Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
-`@RequestHeader`), `@KafkaListener`, and JAX-RS (`@QueryParam`). Sinks on interface
-library types (`sendRedirect`, R2DBC `DatabaseClient.sql`) are matched via Tai-e
-`call-site-mode`.
+`@RequestHeader`), `@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads
+(stored / second-order injection). Sinks on interface library types (`sendRedirect`,
+R2DBC `DatabaseClient.sql`) are matched via Tai-e `call-site-mode`.
 
 ## Layout
 
@@ -66,6 +67,7 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── sources/             # @PathVariable / @RequestBody / @RequestHeader sources
 ├── webflux/             # reactive R2DBC DatabaseClient (WebFlux)
 ├── jaxrs/               # JAX-RS @QueryParam source (Quarkus / Jakarta REST)
+├── storedinjection/     # cross-request stored XSS via a @Repository read
 ├── pathtraversal/
 │   └── direct/          # filename → new File(...)
 └── cmdi/
