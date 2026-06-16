@@ -34,3 +34,11 @@ Thumbs.db
 
 # Tai-e working files
 tai-e-output/
+
+# Secrets — never commit (this is a tool that flags these)
+*.env
+.env
+application-local.properties
+application-local.yml
+secrets.yaml
+secrets.yml

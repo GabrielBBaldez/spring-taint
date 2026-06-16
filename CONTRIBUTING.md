@@ -56,9 +56,32 @@ It should report **30 findings** (30/30 vulnerable cases, 0 false positives).
 ## Adding a rule (source / sink / sanitizer)
 
 Edit [`config/spring-taint.yml`](config/spring-taint.yml) in Tai-e's YAML format.
-Sinks on interface library types are matched via `call-site-mode`. New source
-annotations are recognized by the engine's source layer. Document the rule in
-[`docs/rules.md`](docs/rules.md).
+Method signatures are `<fully.qualified.Class: ReturnType method(ParamTypes)>`, and
+`index` is `result`, `base` (the receiver), or a parameter index (`0`, `1`, …):
+
+```yaml
+# call source — the returned value is tainted
+sources:
+  - { kind: call, method: "<com.acme.LegacyInput: java.lang.String read()>", index: result }
+
+# sink — tainted data must not reach this parameter
+sinks:
+  - { vuln: sql-injection, method: "<com.acme.Dao: void raw(java.lang.String)>", index: 0 }
+
+# sanitizer — taint is cleared at the sanitized argument
+sanitizers:
+  - { method: "<com.acme.Encoder: java.lang.String clean(java.lang.String)>", index: 0 }
+
+# transfer — taint flows from `from` to `to` (use `type` if an Object result is cast)
+transfers:
+  - { method: "<com.acme.Box: java.lang.Object get()>", from: base, to: result, type: java.lang.String }
+```
+
+Sinks on interface library types (no implementation on the classpath) are matched via
+`call-site-mode`. Annotation-driven sources (`@RequestParam`-style) are added to the
+engine's source layer (`engine/taie/SpringSources.java`) rather than the YAML. Validate
+a custom config with `spring-taint validate-config <file> --classpath <cp>`, and
+document the rule in [`docs/rules.md`](docs/rules.md).
 
 ## Pull-request checklist
 

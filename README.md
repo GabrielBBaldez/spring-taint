@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="Spring Taint Analyzer" width="104" height="104" />
+</p>
+
 # Spring Taint Analyzer
 
 [![CI](https://github.com/GabrielBBaldez/spring-taint/actions/workflows/ci.yml/badge.svg)](https://github.com/GabrielBBaldez/spring-taint/actions/workflows/ci.yml)
