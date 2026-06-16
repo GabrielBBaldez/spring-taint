@@ -184,6 +184,12 @@ Per-rule reference: [docs/rules.md](docs/rules.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
 
+Beyond the synthetic benchmark, the analyzer is run against real OSS apps to measure
+its false-positive rate on code not written for it. On **spring-petclinic** (Spring
+Boot 4.0) it engaged correctly (9 entry points, 12 sources) and reported **0 false
+positives**, plus one legitimate config finding the project itself flags as
+production-unsafe — see [docs/validation.md](docs/validation.md).
+
 ---
 
 ## Scope by phases
