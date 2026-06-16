@@ -30,6 +30,21 @@ Boot application, and one legitimate configuration finding** that the project it
 documents as production-unsafe. The engine correctly identified petclinic's controllers
 as entry points despite it targeting a much newer Spring version than the benchmark.
 
+## spring-petclinic-rest (precision at scale)
+
+[`spring-petclinic/spring-petclinic-rest`](https://github.com/spring-petclinic/spring-petclinic-rest)
+— a larger, clean REST application (~126 compiled classes, mixing Spring Data JPA and
+hand-written `JdbcTemplate` repositories). Built on JDK 17.
+
+- The Spring layer scaled up correctly: **31 entry points** and **46 parameter
+  sources** registered.
+- **0 findings, 0 false positives.** Pointer analysis ran in ~0.2s, so performance is
+  not a problem at this size.
+
+This confirms the petclinic precision result is not a small-app artifact: on a
+126-class app with real `JdbcTemplate` usage, the parameterized queries are correctly
+*not* flagged.
+
 ## sql-injection-web (recall)
 
 [`littlewhywhat/sql-injection-web`](https://github.com/littlewhywhat/sql-injection-web)
@@ -110,3 +125,19 @@ java -jar spring-taint-all.jar secrets  target/classes
 java -jar spring-taint-all.jar misconfig target/classes
 java -jar spring-taint-all.jar config   src/main/resources
 ```
+
+## Limitations surfaced by real-world testing
+
+Running on real apps also exposes where the engine stops — recorded honestly:
+
+- **Taint through arbitrary bean/DTO getters and framework callbacks.** In
+  `kaakaww/javaspringvulny`, the SQL injection flows through a DTO getter
+  (`search.getSearchText()`) read inside a Hibernate `session.doReturningWork(...)`
+  anonymous callback. The engine models `String` reads from `@Repository`/`@FeignClient`
+  and `Map.get`, but not value objects' getters in general nor framework-supplied
+  callbacks, so this flow is not reported. Modelling bean-field taint and common
+  callback interfaces is future work.
+- **Build/runtime constraint.** The taint `scan` needs the target compiled to JDK ≤17
+  bytecode (Tai-e frontend limitation); the pattern scanners (`secrets`/`misconfig`)
+  have no such limit. Older apps may need a modern `pom.xml`/toolchain to compile,
+  which does not change their source.

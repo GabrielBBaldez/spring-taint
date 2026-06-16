@@ -190,6 +190,8 @@ Spring Boot 3 (`jakarta`) and Spring Boot 2 (`javax`):
 - **spring-petclinic** (clean, Boot 4.0) — engaged correctly (9 entry points, 12
   sources) and reported **0 false positives**, plus one legitimate config finding the
   project itself flags as production-unsafe.
+- **spring-petclinic-rest** (clean, larger — ~126 classes, real `JdbcTemplate` usage)
+  — **0 false positives** at scale (31 entry points, 46 sources; analysis ~0.2s).
 - **sql-injection-web** (vulnerable) — found the **cross-layer** SQL injection
   (controller → repository, two files) at 99% confidence and generated the fix.
 - **Contrast vulnerable-spring-boot-application** (vulnerable, Boot 2 / `javax`, value
