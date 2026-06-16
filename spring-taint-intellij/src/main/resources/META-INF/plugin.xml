@@ -16,6 +16,7 @@
         <toolWindow id="Spring Taint"
                     anchor="bottom"
                     factoryClass="io.github.gabrielbbaldez.springtaint.intellij.SpringTaintToolWindowFactory"/>
+        <notificationGroup id="Spring Taint" displayType="BALLOON"/>
     </extensions>
 
     <actions>
