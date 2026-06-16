@@ -191,7 +191,11 @@ Spring Boot 3 (`jakarta`) and Spring Boot 2 (`javax`):
   sources) and reported **0 false positives**, plus one legitimate config finding the
   project itself flags as production-unsafe.
 - **spring-petclinic-rest** (clean, larger — ~126 classes, real `JdbcTemplate` usage)
-  — **0 false positives** at scale (31 entry points, 46 sources; analysis ~0.2s).
+  — **0 false positives** at scale (31 entry points, 46 sources; analysis ~0.2s), with
+  the DTO/entity modelling active (1964 bean-accessor + 4 bean-copy transfers).
+- **mall-tiny** (clean, Boot 2.7 / MyBatis) — a real app that calls
+  `BeanUtils.copyProperties` and Lombok `@Builder`; the bean-copy transfer fires and
+  still reports **0 false positives** (82 classes, 33 entry points, 54 sources).
 - **sql-injection-web** (vulnerable) — found the **cross-layer** SQL injection
   (controller → repository, two files) at 99% confidence and generated the fix.
 - **Contrast vulnerable-spring-boot-application** (vulnerable, Boot 2 / `javax`, value

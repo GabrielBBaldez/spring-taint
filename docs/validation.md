@@ -34,16 +34,37 @@ as entry points despite it targeting a much newer Spring version than the benchm
 
 [`spring-petclinic/spring-petclinic-rest`](https://github.com/spring-petclinic/spring-petclinic-rest)
 — a larger, clean REST application (~126 compiled classes, mixing Spring Data JPA and
-hand-written `JdbcTemplate` repositories). Built on JDK 17.
+hand-written `JdbcTemplate` repositories), on Spring Boot 4.0.6. Built on JDK 17.
 
 - The Spring layer scaled up correctly: **31 entry points** and **46 parameter
   sources** registered.
+- The DTO/entity modelling is exercised at scale here: **1964 bean-accessor transfers**
+  (getters, setters, records, builder and fluent setters) plus **4 bean-copy transfers**
+  (`BeanUtils.copyProperties` overloads) were generated and active.
 - **0 findings, 0 false positives.** Pointer analysis ran in ~0.2s, so performance is
   not a problem at this size.
 
-This confirms the petclinic precision result is not a small-app artifact: on a
-126-class app with real `JdbcTemplate` usage, the parameterized queries are correctly
-*not* flagged.
+This confirms the precision result is not a small-app artifact, and that the bean
+accessor / builder / bean-copy modelling holds at 0 false positives on a 126-class app
+with real `JdbcTemplate` usage: the parameterized queries are correctly *not* flagged.
+
+## mall-tiny (bean-copy modelling in the wild)
+
+[`macrozheng/mall-tiny`](https://github.com/macrozheng/mall-tiny) — a widely-used Spring
+Boot 2.7 / MyBatis-Plus starter app (82 compiled classes) that, unlike the petclinics,
+actually calls Spring's `BeanUtils.copyProperties` to map request DTOs onto entities and
+uses Lombok `@Builder`. It is a precision test for the reflection-based bean-copy
+transfer added for that idiom.
+
+- Spring layer engaged: **33 entry points**, **54 parameter sources**, **2675
+  bean-accessor + 4 bean-copy transfers** — so the `copyProperties` transfer is live on
+  code that genuinely uses it.
+- **0 findings, 0 false positives.**
+
+mall-tiny persists through MyBatis-Plus (parameterized `#{}` binding), which is not a
+modelled sink, so the copied-in taint correctly reaches no SQL-string sink. The point
+is narrower than recall: adding the bean-copy transfer introduces **no false positive**
+on a real app that exercises it. (Built with JDK 17; Spring Boot 2.7 / `javax`.)
 
 ## sql-injection-web (recall)
 
