@@ -24,6 +24,8 @@ spring-sources:
   - annotation: org.springframework.web.bind.annotation.RequestHeader
   - annotation: org.springframework.web.bind.annotation.CookieValue
   - annotation: org.springframework.web.bind.annotation.ModelAttribute
+  - annotation: org.springframework.web.bind.annotation.MatrixVariable
+  - annotation: org.springframework.web.bind.annotation.RequestPart
 
   # JAX-RS / Quarkus / Jakarta REST
   - annotation: jakarta.ws.rs.QueryParam
@@ -42,11 +44,26 @@ spring-sources:
   - annotation: org.springframework.kafka.annotation.KafkaListener
     note: "payload parameter (and ConsumerRecord key/value) is tainted"
 
-# Servlet API sources that ARE concrete calls (returned value is tainted)
+# Concrete-call sources (the returned value is tainted)
 sources:
+  # Servlet API
   - { kind: call, method: "<jakarta.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>", index: result }
   - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>", index: result }
   - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getQueryString()>", index: result }
+
+  # File upload — every field of an uploaded part is controlled by the client. The
+  # original filename is a classic path-traversal / reflected-XSS vector.
+  - { kind: call, method: "<org.springframework.web.multipart.MultipartFile: java.lang.String getOriginalFilename()>", index: result }
+  - { kind: call, method: "<org.springframework.web.multipart.MultipartFile: java.io.InputStream getInputStream()>", index: result }
+  - { kind: call, method: "<org.springframework.web.multipart.MultipartFile: java.lang.String getContentType()>", index: result }
+
+  # Request / session attributes may be populated from external data by filters or
+  # interceptors, so data read back out is potentially untrusted.
+  - { kind: call, method: "<jakarta.servlet.ServletRequest: java.lang.Object getAttribute(java.lang.String)>", index: result }
+  - { kind: call, method: "<jakarta.servlet.http.HttpSession: java.lang.Object getAttribute(java.lang.String)>", index: result }
+
+  # Spring Batch reads external data (CSV/XML/legacy DB) one item at a time.
+  - { kind: call, method: "<org.springframework.batch.item.ItemReader: java.lang.Object read()>", index: result }
 
 # ---------------------------------------------------------------------------
 # 2. Sinks (concrete library signatures, Tai-e native format)
@@ -88,6 +105,38 @@ sinks:
   # TemplateAwareExpressionParser, so match that too.
   - { vuln: spel-injection, method: "<org.springframework.expression.common.TemplateAwareExpressionParser: org.springframework.expression.Expression parseExpression(java.lang.String)>", index: 0 }
 
+  # --- JNDI Injection (CWE-74) — the Log4Shell class of bug; lookup() can load remote code ---
+  - { vuln: jndi-injection, method: "<javax.naming.Context: java.lang.Object lookup(java.lang.String)>", index: 0 }
+  - { vuln: jndi-injection, method: "<javax.naming.InitialContext: java.lang.Object lookup(java.lang.String)>", index: 0 }
+  - { vuln: jndi-injection, method: "<javax.naming.directory.InitialDirContext: java.lang.Object lookup(java.lang.String)>", index: 0 }
+
+  # --- XML External Entity / XXE (CWE-611) ---
+  # The sink is the parse itself: when external input reaches a parser that was not
+  # hardened (disallow-doctype-decl), entities can read local files or make requests.
+  - { vuln: xxe, method: "<javax.xml.parsers.DocumentBuilder: org.w3c.dom.Document parse(java.lang.String)>", index: 0 }
+  - { vuln: xxe, method: "<javax.xml.parsers.DocumentBuilder: org.w3c.dom.Document parse(java.io.InputStream)>", index: 0 }
+  - { vuln: xxe, method: "<javax.xml.parsers.DocumentBuilder: org.w3c.dom.Document parse(org.xml.sax.InputSource)>", index: 0 }
+
+  # --- Log Injection / CRLF (CWE-117) ---
+  # The single-argument overloads carry the fully-built message: a tainted value
+  # concatenated into it can forge log entries. (Parameterized "{}" calls place the
+  # value in the Object[] vararg, a weaker vector that is not modelled here.)
+  - { vuln: log-injection, method: "<org.slf4j.Logger: void info(java.lang.String)>", index: 0 }
+  - { vuln: log-injection, method: "<org.slf4j.Logger: void warn(java.lang.String)>", index: 0 }
+  - { vuln: log-injection, method: "<org.slf4j.Logger: void error(java.lang.String)>", index: 0 }
+  - { vuln: log-injection, method: "<org.slf4j.Logger: void debug(java.lang.String)>", index: 0 }
+
+  # --- Template Injection / SSTI (CWE-1336) — user-controlled template name or body = RCE ---
+  - { vuln: template-injection, method: "<org.thymeleaf.ITemplateEngine: java.lang.String process(java.lang.String,org.thymeleaf.context.IContext)>", index: 0 }
+  - { vuln: template-injection, method: "<freemarker.template.Configuration: freemarker.template.Template getTemplate(java.lang.String)>", index: 0 }
+
+  # --- JPA / JPQL Injection (CWE-89) — JPA does not make string-built queries safe ---
+  - { vuln: jpql-injection, method: "<jakarta.persistence.EntityManager: jakarta.persistence.Query createQuery(java.lang.String)>", index: 0 }
+  # (EntityManager.createNativeQuery is listed under SQL injection above.)
+
+  # --- Open Redirect via Spring MVC view name (CWE-601) — "redirect:" + user input ---
+  - { vuln: open-redirect, method: "<org.springframework.web.servlet.ModelAndView: void setViewName(java.lang.String)>", index: 0 }
+
 # ---------------------------------------------------------------------------
 # 3. Sanitizers (taint is cleared at the returned value)
 # ---------------------------------------------------------------------------
@@ -100,3 +149,32 @@ sanitizers:
   # NamedParameterJdbcTemplate / PreparedStatement carry user data as bound
   # parameters, not as concatenated SQL text.
   - { method: "<org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate: java.util.List query(java.lang.String,org.springframework.jdbc.core.namedparam.SqlParameterSource,org.springframework.jdbc.core.RowMapper)>", index: result }
+
+# ---------------------------------------------------------------------------
+# 4. Taint transfers (taint flows from `from` to `to` across a call)
+# ---------------------------------------------------------------------------
+# Tai-e already bundles ~138 String transfers (concat, substring, StringBuilder,
+# ...). These add modern Spring/Java wrappers that carry taint through. `from`/`to`
+# are: base (receiver), result (return value), or a parameter index.
+transfers:
+  # Optional as a transparent wrapper. The unwrap methods return Object; in real
+  # code the result is immediately cast (Optional<String> -> String). Tai-e
+  # type-filters at the cast, so the unwrap taint is typed as String to survive it.
+  - { method: "<java.util.Optional: java.util.Optional of(java.lang.Object)>", from: 0, to: result }
+  - { method: "<java.util.Optional: java.util.Optional ofNullable(java.lang.Object)>", from: 0, to: result }
+  - { method: "<java.util.Optional: java.lang.Object get()>", from: base, to: result, type: java.lang.String }
+  - { method: "<java.util.Optional: java.lang.Object orElse(java.lang.Object)>", from: base, to: result, type: java.lang.String }
+  - { method: "<java.util.Optional: java.lang.Object orElse(java.lang.Object)>", from: 0, to: result, type: java.lang.String }
+
+  # CompletableFuture (async results) — same Object-return + cast pattern as Optional.
+  - { method: "<java.util.concurrent.CompletableFuture: java.util.concurrent.CompletableFuture completedFuture(java.lang.Object)>", from: 0, to: result }
+  - { method: "<java.util.concurrent.CompletableFuture: java.lang.Object get()>", from: base, to: result, type: java.lang.String }
+  - { method: "<java.util.concurrent.CompletableFuture: java.lang.Object join()>", from: base, to: result, type: java.lang.String }
+
+  # Reactor Mono/Flux (WebFlux). Operators taking a lambda (map/flatMap) depend on
+  # Tai-e's partial lambda support — best-effort, see docs/rules.md.
+  - { method: "<reactor.core.publisher.Mono: reactor.core.publisher.Mono just(java.lang.Object)>", from: 0, to: result }
+  - { method: "<reactor.core.publisher.Flux: reactor.core.publisher.Flux just(java.lang.Object[])>", from: 0, to: result }
+
+  # Stream collectors that concatenate elements into one string
+  - { method: "<java.util.stream.Collectors: java.util.stream.Collector joining(java.lang.CharSequence)>", from: 0, to: result }

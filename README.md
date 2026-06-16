@@ -8,8 +8,8 @@
 > Interprocedural taint analysis for Spring Boot applications, built on [Tai-e](https://github.com/pascal-lab/Tai-e).
 > Detects multi-layer data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
 
-Detects **8 vulnerability classes** across **5 frameworks**, including cross-layer,
-reactive, and cross-request stored injection — **17/17 vulnerable benchmark cases
+Detects **12 vulnerability classes** across **5 frameworks**, including cross-layer,
+reactive, and cross-request stored injection — **27/27 vulnerable benchmark cases
 with 0 false positives.** Ships as a CLI, a self-contained jar, a Docker image, and
 a GitHub Action with SARIF 2.1 output.
 
@@ -138,15 +138,17 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **20 cases (17 vulnerable, 3 safe)** across SQL injection
+The benchmark has **30 cases (27 vulnerable, 3 safe)** across SQL and JPQL injection
 (direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected,
-conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL injection, path
-traversal, command injection, and open redirect — with sources from Spring
-(`@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`),
-`@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads. Ground truth is
+conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE,
+template injection (SSTI), log injection, path traversal, command injection, and
+open redirect — with sources from Spring (`@RequestParam`, `@PathVariable`,
+`@RequestBody`, `@RequestHeader`, `@MatrixVariable`, `MultipartFile`),
+`@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads, plus taint
+flowing through `Optional` / `CompletableFuture` wrappers. Ground truth is
 in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **17/17 vulnerable cases detected, 0 false positives** on
+Current engine result: **27/27 vulnerable cases detected, 0 false positives** on
 the 3 safe cases. Full table: [benchmark README](spring-taint-benchmark/README.md).
 Per-rule reference: [docs/rules.md](docs/rules.md).
 
@@ -306,11 +308,12 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **17/17 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads)
+- [x] precision/recall on the current benchmark — **27/27 vulnerable cases detected, 0 false positives** across SQL / JPQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE, template injection (SSTI), log injection, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads)
 - [x] Phase 2 differentiators: `@KafkaListener` source, conditional sanitizers, stored / second-order injection
 - [x] GitHub Action (Docker) + self-contained jar + CI workflow
 - [x] Web dashboard (React + Vite) for SARIF reports
 - [x] Hardcoded-secrets scanner (`secrets` command); mergeable `--config`
+- [x] Robustness pass: JNDI / XXE / log / template / JPQL sinks, file-upload and `@MatrixVariable` sources, `Optional` / `CompletableFuture` taint transfers, framework-internal sink filtering
 
 ---
 

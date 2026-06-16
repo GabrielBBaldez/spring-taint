@@ -47,10 +47,20 @@ public final class TaintFlowExtractor {
     /** Safety bound on call-graph traversal when reconstructing a trace. */
     private static final int MAX_BFS_METHODS = 20_000;
 
-    /** Package prefixes whose classes are framework/JDK internals, not the analyzed app. */
+    /**
+     * Package prefixes whose classes are framework/JDK/library internals, not the
+     * analyzed application. A sink reached <em>inside</em> one of these is a
+     * re-report of the same flow deep in a dependency (e.g. JdbcTemplate logging
+     * the SQL it received, or the SLF4J/commons-logging facade delegating a log
+     * call), so it is dropped — the application's own sink is reported instead.
+     */
     private static final List<String> FRAMEWORK_PREFIXES = List.of(
             "java.", "javax.", "jakarta.", "jdk.", "sun.", "com.sun.",
-            "org.springframework.", "kotlin.");
+            "org.springframework.", "kotlin.",
+            // logging stack: app code never has its sink inside the logging facade
+            "org.slf4j.", "org.apache.", "ch.qos.", "io.micrometer.",
+            // common runtime libraries that may re-host a sink internally
+            "reactor.", "io.netty.", "com.fasterxml.", "com.zaxxer.");
 
     private static boolean isFrameworkClass(String fqn) {
         for (String prefix : FRAMEWORK_PREFIXES) {

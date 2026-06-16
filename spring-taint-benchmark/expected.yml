@@ -11,7 +11,7 @@
 # Paths are relative to this module (spring-taint-benchmark/).
 
 benchmark: spring-taint-benchmark
-version: 0.2.0
+version: 0.6.0
 base: src/main/java/io/github/gabrielbbaldez/springtaint/benchmark
 
 cases:
@@ -207,15 +207,118 @@ cases:
     sinkFile: storedinjection/StoredXssReadController.java
     note: "cross-request: persisted by one request, read (as untrusted) and rendered by another"
 
+  # ---------------- JNDI injection (CWE-74) ----------------
+  - id: jndi-injection
+    category: jndi-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: jndi/JndiLookupController.java
+    sinkFile: jndi/JndiLookupController.java
+    note: "user-controlled name to InitialContext.lookup (the Log4Shell class of bug)"
+
+  # ---------------- XXE (CWE-611) ----------------
+  - id: xxe-document-builder
+    category: xxe
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: xxe/XxeController.java
+    sinkFile: xxe/XxeController.java
+    note: "external input reaches an unhardened DocumentBuilder.parse"
+
+  # ---------------- Log injection (CWE-117) ----------------
+  - id: log-injection
+    category: log-injection
+    severity: low
+    expected: true
+    crossLayer: false
+    sourceFile: loginjection/LogInjectionController.java
+    sinkFile: loginjection/LogInjectionController.java
+    note: "username concatenated into a log message; framework-internal log sinks are filtered out"
+
+  # ---------------- Template injection / SSTI (CWE-1336) ----------------
+  - id: template-injection-thymeleaf
+    category: template-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: templateinjection/ThymeleafSstiController.java
+    sinkFile: templateinjection/ThymeleafSstiController.java
+    note: "user-controlled template name to ITemplateEngine.process"
+
+  # ---------------- JPQL injection (CWE-89) ----------------
+  - id: jpql-injection
+    category: jpql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: jpql/JpqlInjectionController.java
+    sinkFile: jpql/JpqlInjectionController.java
+    note: "concatenated JPQL to EntityManager.createQuery (JPA is not immune to injection)"
+
+  # ---------------- Open redirect via ModelAndView (CWE-601) ----------------
+  - id: open-redirect-modelandview
+    category: open-redirect
+    severity: medium
+    expected: true
+    crossLayer: false
+    sourceFile: openredirect/ModelAndViewRedirectController.java
+    sinkFile: openredirect/ModelAndViewRedirectController.java
+    note: "\"redirect:\" + user input set as a Spring MVC view name"
+
+  # ---------------- File-upload source (CWE-22) ----------------
+  - id: upload-filename-path-traversal
+    category: path-traversal
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: upload/FileUploadController.java
+    sinkFile: upload/FileUploadController.java
+    note: "source is MultipartFile.getOriginalFilename(); sink is new File(...)"
+
+  # ---------------- Matrix-variable source (CWE-89) ----------------
+  - id: matrix-variable-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: sources/MatrixVariableSqliController.java
+    sinkFile: sources/MatrixVariableSqliController.java
+    note: "source is @MatrixVariable (e.g. /users/42;role=admin)"
+
+  # ---------------- Taint transfers (transparent wrappers) ----------------
+  - id: optional-transfer-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: transfers/OptionalTransferController.java
+    sinkFile: transfers/OptionalTransferController.java
+    note: "taint flows through Optional.of/get; the Object unwrap is typed String to survive the cast"
+
+  - id: completablefuture-transfer-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: transfers/CompletableFutureTransferController.java
+    sinkFile: transfers/CompletableFutureTransferController.java
+    note: "taint flows through CompletableFuture.completedFuture/get"
+
 # Totals (kept in sync by hand).
 summary:
-  total: 20
-  expectedVulnerable: 17
+  total: 30
+  expectedVulnerable: 27
   expectedSafe: 3
-  categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
-  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener, "JAX-RS QueryParam", "@Repository read (stored)"]
+  categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
+               xxe, path-traversal, command-injection, log-injection, template-injection,
+               open-redirect]
+  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, MatrixVariable, RequestPart,
+            KafkaListener, "JAX-RS QueryParam", "@Repository read (stored)",
+            "MultipartFile.getOriginalFilename"]
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut]
   # Current engine results on this benchmark:
-  detectedVulnerable: 17   # all vulnerable cases
+  detectedVulnerable: 27   # all vulnerable cases
   falsePositives: 0
   knownGaps: []

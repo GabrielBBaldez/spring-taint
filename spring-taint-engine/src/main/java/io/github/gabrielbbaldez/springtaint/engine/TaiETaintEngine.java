@@ -2,6 +2,7 @@ package io.github.gabrielbbaldez.springtaint.engine;
 
 import io.github.gabrielbbaldez.springtaint.config.SanitizerSpec;
 import io.github.gabrielbbaldez.springtaint.config.SinkSpec;
+import io.github.gabrielbbaldez.springtaint.config.SourceSpec;
 import io.github.gabrielbbaldez.springtaint.config.TaintConfig;
 import io.github.gabrielbbaldez.springtaint.config.TransferSpec;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringEntryPointPlugin;
@@ -124,6 +125,17 @@ public final class TaiETaintEngine implements TaintEngine {
      */
     private void writeTaintConfig(TaintConfig config, Path dir) throws IOException {
         StringBuilder yaml = new StringBuilder();
+        // Concrete-method sources (returned value or parameter tainted). Annotation-driven
+        // Spring sources are contributed separately by SpringTaintConfigProvider; Tai-e
+        // unions both. The index keyword (result) and parameter indices pass through as-is.
+        if (!config.sources().isEmpty()) {
+            yaml.append("sources:\n");
+            for (SourceSpec source : config.sources()) {
+                yaml.append("  - { kind: ").append(source.kind())
+                        .append(", method: \"").append(source.method())
+                        .append("\", index: ").append(source.index()).append(" }\n");
+            }
+        }
         yaml.append("sinks:\n");
         for (SinkSpec sink : config.sinks()) {
             yaml.append("  - { method: \"").append(sink.method())
@@ -145,9 +157,15 @@ public final class TaiETaintEngine implements TaintEngine {
         if (!config.transfers().isEmpty()) {
             yaml.append("transfers:\n");
             for (TransferSpec transfer : config.transfers()) {
+                // from/to are bare tokens (base | result | parameter index), matching
+                // Tai-e's own transfer files; quoting a numeric index would change its type.
                 yaml.append("  - { method: \"").append(transfer.method())
-                        .append("\", from: \"").append(transfer.from())
-                        .append("\", to: \"").append(transfer.to()).append("\" }\n");
+                        .append("\", from: ").append(transfer.from())
+                        .append(", to: ").append(transfer.to());
+                if (transfer.type() != null && !transfer.type().isBlank()) {
+                    yaml.append(", type: \"").append(transfer.type()).append('"');
+                }
+                yaml.append(" }\n");
             }
         }
         Files.writeString(dir.resolve("spring-sinks.yml"), yaml.toString());
@@ -217,9 +235,11 @@ public final class TaiETaintEngine implements TaintEngine {
 
     private static Severity severityFor(String vuln) {
         return switch (vuln) {
-            case "sql-injection", "command-injection", "spel-injection" -> Severity.CRITICAL;
-            case "xss", "path-traversal", "ssrf" -> Severity.HIGH;
+            case "sql-injection", "jpql-injection", "command-injection", "spel-injection",
+                 "jndi-injection", "template-injection" -> Severity.CRITICAL;
+            case "xss", "path-traversal", "ssrf", "xxe" -> Severity.HIGH;
             case "open-redirect" -> Severity.MEDIUM;
+            case "log-injection" -> Severity.LOW;
             default -> Severity.HIGH;
         };
     }

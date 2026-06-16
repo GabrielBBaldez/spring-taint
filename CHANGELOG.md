@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] - 2026-06-16
+
+### Added
+- **Five new vulnerability classes**, each benchmark-verified: JNDI injection
+  (CWE-74), XXE (CWE-611), template injection / SSTI (CWE-1336), JPQL injection
+  (CWE-89), and log injection (CWE-117).
+- **New sources**: file upload (`MultipartFile.getOriginalFilename/getInputStream/
+  getContentType`), `@MatrixVariable` and `@RequestPart`, request/session
+  attributes, and Spring Batch `ItemReader`. Concrete-call sources from the config
+  are now wired into the Tai-e analysis.
+- **New sink**: open redirect via Spring MVC `ModelAndView.setViewName`.
+- **Taint transfers** for transparent wrappers — `Optional` and
+  `CompletableFuture` (`of`/`completedFuture` → wrapper, `get`/`orElse`/`join` →
+  out). Transfers gain an optional `type` so an `Object` unwrap survives the cast
+  the JVM inserts (`Optional<String>` → `String`).
+
+### Changed
+- Framework-internal sinks are filtered out (the logging facade, commons-logging,
+  Reactor, Netty, …), so broad sinks like `Logger.info` report only application
+  code — no false positives from a library logging the data it received.
+- Benchmark grows to 30 cases (27 vulnerable, 3 safe); engine detects **27/27**
+  with 0 false positives.
+
 ## [0.5.0] - 2026-06-16
 
 ### Added
@@ -56,6 +79,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.6.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.5.0
 [0.4.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.4.0
 [0.3.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.3.0

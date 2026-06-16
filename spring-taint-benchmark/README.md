@@ -39,12 +39,25 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `webflux-sqli` | SQL injection (CWE-89) | reactive — R2DBC `DatabaseClient` | vulnerable | ✅ |
 | `jaxrs-sqli` | SQL injection (CWE-89) | JAX-RS `@QueryParam` (Quarkus) | vulnerable | ✅ |
 | `stored-xss` | XSS (CWE-79) | cross-request — `@Repository` read | vulnerable | ✅ |
+| `jndi-injection` | JNDI injection (CWE-74) | no — `InitialContext.lookup` (Log4Shell class) | vulnerable | ✅ |
+| `xxe-document-builder` | XXE (CWE-611) | no — `DocumentBuilder.parse` | vulnerable | ✅ |
+| `log-injection` | Log injection (CWE-117) | no — `Logger.info(String)` | vulnerable | ✅ |
+| `template-injection-thymeleaf` | SSTI (CWE-1336) | no — Thymeleaf `process` | vulnerable | ✅ |
+| `jpql-injection` | JPQL injection (CWE-89) | no — `EntityManager.createQuery` | vulnerable | ✅ |
+| `open-redirect-modelandview` | Open redirect (CWE-601) | no — `ModelAndView.setViewName` | vulnerable | ✅ |
+| `upload-filename-path-traversal` | Path traversal (CWE-22) | no — `MultipartFile.getOriginalFilename` source | vulnerable | ✅ |
+| `matrix-variable-sqli` | SQL injection (CWE-89) | no — `@MatrixVariable` source | vulnerable | ✅ |
+| `optional-transfer-sqli` | SQL injection (CWE-89) | through `Optional` (transfer) | vulnerable | ✅ |
+| `completablefuture-transfer-sqli` | SQL injection (CWE-89) | through `CompletableFuture` (transfer) | vulnerable | ✅ |
 
-**17 vulnerable, 3 safe.** Current engine result: **17/17 detected, 0 false positives.**
+**27 vulnerable, 3 safe.** Current engine result: **27/27 detected, 0 false positives.**
 Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
-`@RequestHeader`), `@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads
-(stored / second-order injection). Sinks on interface library types (`sendRedirect`,
-R2DBC `DatabaseClient.sql`) are matched via Tai-e `call-site-mode`.
+`@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, JAX-RS
+(`@QueryParam`), and `@Repository` reads (stored / second-order injection). Sinks on
+interface library types (`sendRedirect`, R2DBC `DatabaseClient.sql`, Thymeleaf
+`ITemplateEngine`, `EntityManager`) are matched via Tai-e `call-site-mode`. Framework-
+internal sinks (e.g. a logging facade logging the SQL it received) are filtered out,
+so broad sinks like `Logger.info` do not produce false positives.
 
 > `secrets/HardcodedSecrets.java` is **not** a taint case — it feeds the separate
 > `spring-taint secrets` scanner. Run: `spring-taint secrets spring-taint-benchmark/target/classes`.
@@ -66,11 +79,18 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── ssrf/
 │   └── resttemplate/    # user URL → RestTemplate.getForObject
 ├── spel/                # user expression → ExpressionParser.parseExpression
-├── openredirect/        # user URL → response.sendRedirect
-├── sources/             # @PathVariable / @RequestBody / @RequestHeader sources
+├── openredirect/        # user URL → response.sendRedirect / ModelAndView.setViewName
+├── sources/             # @PathVariable / @RequestBody / @RequestHeader / @MatrixVariable
 ├── webflux/             # reactive R2DBC DatabaseClient (WebFlux)
 ├── jaxrs/               # JAX-RS @QueryParam source (Quarkus / Jakarta REST)
 ├── storedinjection/     # cross-request stored XSS via a @Repository read
+├── upload/              # MultipartFile.getOriginalFilename → new File(...)
+├── jndi/                # user name → InitialContext.lookup
+├── xxe/                 # user URI → DocumentBuilder.parse
+├── loginjection/        # user input → Logger.info(String)
+├── templateinjection/   # user template name → Thymeleaf ITemplateEngine.process
+├── jpql/                # user input → EntityManager.createQuery
+├── transfers/           # taint through Optional / CompletableFuture wrappers
 ├── pathtraversal/
 │   └── direct/          # filename → new File(...)
 └── cmdi/

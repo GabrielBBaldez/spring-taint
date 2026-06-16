@@ -23,6 +23,8 @@ final class SpringSources {
             "org.springframework.web.bind.annotation.RequestHeader",
             "org.springframework.web.bind.annotation.CookieValue",
             "org.springframework.web.bind.annotation.ModelAttribute",
+            "org.springframework.web.bind.annotation.MatrixVariable",
+            "org.springframework.web.bind.annotation.RequestPart",
             // JAX-RS (Quarkus, Jakarta REST)
             "jakarta.ws.rs.QueryParam",
             "jakarta.ws.rs.PathParam",
