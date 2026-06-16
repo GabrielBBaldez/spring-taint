@@ -79,6 +79,27 @@ This project does **not** replace SonarQube. They serve different purposes:
 | Checkmarx / Veracode | Full enterprise SAST | ✅ — but **expensive** |
 | **Spring Taint Analyzer** | Interprocedural taint for Spring Boot | ✅ — **free** |
 
+Where it differs in practice — the Spring-specific capabilities that depend on real
+interprocedural taint:
+
+| Capability | Spring Taint | SonarQube (free) | Semgrep OSS |
+|---|:---:|:---:|:---:|
+| Interprocedural taint (across methods/layers) | ✅ | ❌ | ❌ |
+| `@KafkaListener` / `@FeignClient` as sources | ✅ | ❌ | ❌ |
+| `MultipartFile` / `@MatrixVariable` as sources | ✅ | ❌ | ❌ |
+| Conditional sanitizers | ✅ | ❌ | ❌ |
+| Cross-request stored injection | ✅ | ❌ | ❌ |
+| WebFlux / Reactor (`Mono` / `Flux`) | ✅ | ❌ | ❌ |
+| JPQL / template / JNDI / XXE injection | ✅ | ❌ | ❌ |
+| Spring Security & `application.yml` misconfig | ✅ | ❌ | ❌ |
+| Per-finding confidence score | ✅ | ❌ | ❌ |
+| Diff mode for pull requests | ✅ | ❌ | ✅ |
+| SARIF 2.1 output | ✅ | ✅ | ✅ |
+| Free / open source | ✅ | ✅ | ✅ |
+
+> **Semgrep Pro** has interprocedural taint but is a paid product (~$35/dev/month).
+> Spring Taint Analyzer delivers the Spring Boot–focused equivalent, free.
+
 Expected use in a CI pipeline:
 
 ```yaml
@@ -160,36 +181,43 @@ Positive cases measure **recall**; safe cases measure **precision**.
 ## Scope by phases
 
 - **Phase 1 — Spring MVC (MVP):** SQL injection, XSS, path traversal, command injection, SSRF, SpEL injection, open redirect. Sources: `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`, `@CookieValue`, `@ModelAttribute`, servlet API. Exit criterion: detect every benchmark case with zero false negatives and precision > 80%.
-- **Phase 2 — gaps left open by existing OSS tools:** `@KafkaListener` as a source, conditional sanitizers, custom method sanitizers, cross-request stored injection, WebFlux / async (`Mono`/`Flux` as transparent taint wrappers).
-- **Phase 3 — roadmap (separate repos):** Quarkus / JAX-RS, Micronaut, gRPC, RabbitMQ.
+- **Phase 2 — gaps left open by existing OSS tools (done):** `@KafkaListener` as a source, conditional sanitizers, custom method sanitizers, cross-request stored injection, WebFlux / async (`Mono`/`Flux` as transparent taint wrappers).
+- **Phase 3 — multi-framework & robustness (done):** JAX-RS / Quarkus and Micronaut sources; JNDI / XXE / template / JPQL / log-injection sinks; `@FeignClient`, `@Scheduled` and `@Transactional` sources; configuration and misconfiguration audits.
+- **Phase 4 — roadmap:** gRPC and RabbitMQ sources, an IntelliJ plugin, and publishing the image to GHCR.
 
 The full technical scope lives in [`docs/design/spring-taint-scope.md`](docs/design/spring-taint-scope.md).
 
 ---
 
-## Usage (planned)
+## Usage
+
+The commands (the runnable `java -jar …/spring-taint-all.jar` form is in
+[Building](#building); `scan` needs the target's dependency classpath via `--libs`):
 
 ```bash
 # Basic scan
-spring-taint scan ./my-project
+spring-taint scan target/classes --libs "<dependency classpath>"
 
-# Custom configuration
-spring-taint scan --config spring-taint.yml ./my-project
+# Custom configuration (merged onto the built-in rules)
+spring-taint scan target/classes --libs "…" --config spring-taint.yml
 
 # SARIF output (GitHub Advanced Security, GitLab SAST, VS Code)
-spring-taint scan --output results.sarif ./my-project
+spring-taint scan target/classes --libs "…" --output results.sarif
 
-# Filter by severity, show full trace
-spring-taint scan --severity critical,high --verbose ./my-project
+# Filter by severity, show the full trace
+spring-taint scan target/classes --libs "…" --severity critical,high --verbose
+
+# Only findings touching files changed vs a base ref (fast PR scans)
+spring-taint scan target/classes --libs "…" --diff origin/main
 ```
 
-Expected output:
+Example output (every taint finding carries a confidence score):
 
 ```
-[CRITICAL] sql-injection @ GET /users/search
-  Source:  UserController.java:12 — @RequestParam String name
-  Flow:    UserController → UserService.search() → UserRepository.findByName()
-  Sink:    UserRepository.java:34 — JdbcTemplate.query(sql)
+[CRITICAL] sql-injection (confidence: 95%)
+  Source:  UserController.java:28 - search() - tainted parameter
+  Flow:    UserController.search() -> UserService.search() -> UserRepository.query()
+  Sink:    UserRepository.java:27 - sink: query()
   Sanitizer: none detected
 ```
 
@@ -318,7 +346,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **27/27 vulnerable cases detected, 0 false positives** across SQL / JPQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE, template injection (SSTI), log injection, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads)
+- [x] precision/recall on the current benchmark — **30/30 vulnerable cases detected, 0 false positives** across SQL / JPQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE, template injection (SSTI), log injection, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads, `@FeignClient`, `@Scheduled`)
 - [x] Phase 2 differentiators: `@KafkaListener` source, conditional sanitizers, stored / second-order injection
 - [x] GitHub Action (Docker) + self-contained jar + CI workflow
 - [x] Web dashboard (React + Vite) for SARIF reports
@@ -336,9 +364,9 @@ Static analysis has inherent limits. For this project:
 
 - **Java reflection** (`Class.forName()`, `Method.invoke()`) can break the flow
 - **Spring dynamic proxies** (AOP / CGLib) introduce indirection that may break the call graph
-- **Data from the database** — stored injection requires modelling persistence as a taint propagator
+- **Entity / DTO field tracking** — sources are `String`-only (a `@Repository`/`@FeignClient` returning a DTO whose getter is later read is not followed), a deliberate precision-over-recall choice
 - **Complex lambdas / method references** — partial coverage via Tai-e
-- **Cross-service flows** over HTTP are not tracked in Phase 1
+- **The taint analysis runs on JDK 17** — Tai-e 0.5.1 cannot read JDK 21 bytecode
 
 Each release documents its limitations explicitly, alongside the test cases that exercise them.
 

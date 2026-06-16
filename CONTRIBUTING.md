@@ -31,7 +31,7 @@ java -jar spring-taint-engine/target/spring-taint-all.jar scan \
   --libs "$(cat spring-taint-benchmark/bench-cp.txt)"
 ```
 
-It should report **17 findings** (17/17 vulnerable cases, 0 false positives).
+It should report **30 findings** (30/30 vulnerable cases, 0 false positives).
 
 ## Project layout
 
@@ -63,7 +63,7 @@ annotations are recognized by the engine's source layer. Document the rule in
 ## Pull-request checklist
 
 - [ ] `mvn clean package` passes (build + unit tests).
-- [ ] The benchmark still detects **17/17 with 0 false positives** (or `expected.yml`
+- [ ] The benchmark still detects **30/30 with 0 false positives** (or `expected.yml`
       is updated with the new ground truth).
 - [ ] Docs updated (`README.md`, `docs/rules.md`, benchmark `README.md`) if behavior changed.
 - [ ] Commit messages are clear and describe *why*, not just *what*.
