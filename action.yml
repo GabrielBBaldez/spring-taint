@@ -1,5 +1,5 @@
 name: 'Spring Taint Analysis'
-description: 'Interprocedural taint analysis for Spring Boot, built on Tai-e. Detects multi-layer data-flow vulnerabilities SonarQube cannot reach.'
+description: 'Interprocedural taint analysis for Spring Boot. Finds multi-layer data-flow vulnerabilities SonarQube cannot reach.'
 branding:
   icon: 'shield'
   color: 'green'

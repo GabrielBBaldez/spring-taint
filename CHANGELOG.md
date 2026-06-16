@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.17.1] - 2026-06-16
+
+### Fixed
+- Shortened the GitHub Action `description` to under 125 characters so the Action can be
+  published to the GitHub Marketplace.
+
+### Changed
+- The README header now uses the project logo (`logo.png`).
+
 ## [0.17.0] - 2026-06-16
 
 ### Added
@@ -261,6 +270,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.17.1]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.17.1
 [0.17.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.17.0
 [0.16.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.16.0
 [0.15.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.15.0
