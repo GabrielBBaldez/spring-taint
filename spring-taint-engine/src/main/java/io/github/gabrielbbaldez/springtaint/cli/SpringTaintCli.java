@@ -11,7 +11,8 @@ import picocli.CommandLine.Command;
         mixinStandardHelpOptions = true,
         version = "spring-taint 0.1.0",
         description = "Interprocedural taint analysis for Spring Boot, built on Tai-e.",
-        subcommands = {ScanCommand.class, SecretsCommand.class, CommandLine.HelpCommand.class})
+        subcommands = {ScanCommand.class, SecretsCommand.class, ConfigCommand.class,
+                MisconfigCommand.class, CommandLine.HelpCommand.class})
 public final class SpringTaintCli implements Runnable {
 
     @Override

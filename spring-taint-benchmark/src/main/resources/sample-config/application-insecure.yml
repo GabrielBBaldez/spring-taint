@@ -1,0 +1,34 @@
+# Intentionally INSECURE Spring configuration — input for `spring-taint config`.
+# Never use as a real application config.
+spring:
+  datasource:
+    url: jdbc:postgresql://db/app
+    username: app
+    password: admin123                 # hardcoded secret
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-secret: s3cr3t-client-value   # hardcoded secret
+  autoconfigure:
+    # Spring Security turned off entirely
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+  h2:
+    console:
+      enabled: true                    # H2 console left on
+      settings:
+        web-allow-others: true         # ...reachable from any host
+
+server:
+  ssl:
+    enabled: false                     # HTTPS disabled
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"                   # every Actuator endpoint exposed
+  endpoint:
+    health:
+      show-details: always             # health details always shown

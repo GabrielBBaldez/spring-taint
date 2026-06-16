@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-06-16
+
+### Added
+- **`config` command** — audits Spring config files (`application*.yml/.yaml/
+  .properties`, `bootstrap*`) for insecure settings: hardcoded secrets, disabled
+  TLS, Spring Security auto-configuration excluded, over-broad Actuator exposure,
+  and the H2 console left enabled.
+- **`misconfig` command** — a bytecode scan for insecure Spring patterns:
+  `csrf().disable()` / `frameOptions().disable()`, `@CrossOrigin(origins = "*")`,
+  `Cookie.setHttpOnly(false)` / `setSecure(false)`, and sensitive data
+  (passwords, tokens, card numbers) passed to a logger.
+
 ## [0.6.0] - 2026-06-16
 
 ### Added
@@ -79,6 +91,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.7.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.5.0
 [0.4.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.4.0

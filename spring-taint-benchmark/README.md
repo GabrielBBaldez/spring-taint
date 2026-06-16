@@ -59,8 +59,12 @@ interface library types (`sendRedirect`, R2DBC `DatabaseClient.sql`, Thymeleaf
 internal sinks (e.g. a logging facade logging the SQL it received) are filtered out,
 so broad sinks like `Logger.info` do not produce false positives.
 
-> `secrets/HardcodedSecrets.java` is **not** a taint case — it feeds the separate
-> `spring-taint secrets` scanner. Run: `spring-taint secrets spring-taint-benchmark/target/classes`.
+> Some files are **not** taint cases — they feed the separate pattern-based scanners:
+> - `secrets/HardcodedSecrets.java` → `spring-taint secrets target/classes`
+> - `misconfig/*` (insecure security config, permissive CORS, insecure cookies,
+>   sensitive logging) → `spring-taint misconfig target/classes`
+> - `resources/sample-config/application-insecure.yml` (and the safe counterpart)
+>   → `spring-taint config spring-taint-benchmark/src/main/resources/sample-config`
 
 ## Layout
 

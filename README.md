@@ -240,13 +240,22 @@ java -jar spring-taint-engine/target/spring-taint-all.jar \
 A custom `--config` is **merged** onto the built-in rules (use `--no-default-config`
 to replace them instead).
 
-### Hardcoded secrets
+### Secrets, configuration and misconfiguration scans
 
-A separate, pattern-based scan (any JDK) finds secrets in compiled bytecode —
-secret-named constants, known key formats (AWS, GitHub, …), and `@Value` defaults:
+Three pattern-based scans (any JDK, no taint engine) complement the taint analysis:
 
 ```bash
-java -jar spring-taint-engine/target/spring-taint-all.jar secrets target/classes
+# Hardcoded secrets in bytecode — secret-named constants, known key formats
+# (AWS, GitHub, …), and @Value defaults
+java -jar …/spring-taint-all.jar secrets target/classes
+
+# Insecure settings in application*.yml / .properties — hardcoded secrets,
+# disabled TLS, Security auto-config excluded, Actuator "*", H2 console
+java -jar …/spring-taint-all.jar config src/main/resources
+
+# Insecure Spring code in bytecode — csrf()/frameOptions().disable(),
+# @CrossOrigin("*"), insecure cookies, sensitive data logged
+java -jar …/spring-taint-all.jar misconfig target/classes
 ```
 
 ---
@@ -314,6 +323,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Web dashboard (React + Vite) for SARIF reports
 - [x] Hardcoded-secrets scanner (`secrets` command); mergeable `--config`
 - [x] Robustness pass: JNDI / XXE / log / template / JPQL sinks, file-upload and `@MatrixVariable` sources, `Optional` / `CompletableFuture` taint transfers, framework-internal sink filtering
+- [x] Configuration & misconfiguration audits: `config` (insecure `application.yml`/`.properties`) and `misconfig` (CSRF/clickjacking disabled, CORS `*`, insecure cookies, sensitive data logged)
 
 ---
 

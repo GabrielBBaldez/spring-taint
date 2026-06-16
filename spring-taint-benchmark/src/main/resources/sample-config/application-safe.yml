@@ -1,0 +1,23 @@
+# Intentionally SAFE Spring configuration — the secure counterpart. `spring-taint
+# config` must report nothing here.
+spring:
+  datasource:
+    url: jdbc:postgresql://db/app
+    username: app
+    password: ${DB_PASSWORD}           # externalized — not a literal
+  h2:
+    console:
+      enabled: false
+
+server:
+  ssl:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info           # only safe endpoints
+  endpoint:
+    health:
+      show-details: when-authorized

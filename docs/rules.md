@@ -142,6 +142,35 @@ A separate, pattern-based scan of the compiled bytecode (not taint). Run it with
 Reported values are masked. `spring-taint secrets` works on any JDK (it does not
 run the taint engine).
 
+## Configuration audit — `spring-taint config <path>`
+
+A pattern-based scan of Spring config files (`application*.yml/.yaml/.properties`,
+`bootstrap*`), independent of taint. Point it at a file or a directory:
+
+| Rule | Detects | Severity |
+|---|---|---|
+| `hardcoded-secret` | a secret-named key (`password`, `secret`, `*-key`, `token`, …) with a **literal** value (not `${ENV}`) | high / critical |
+| `insecure-transport` | `server.ssl.enabled: false`; `*.use-insecure-trust-manager: true` | medium / high |
+| `security-disabled` | `spring.autoconfigure.exclude` removes `SecurityAutoConfiguration` | high |
+| `actuator-exposure` | `management.endpoints.web.exposure.include: "*"`; health `show-details: always` | high / low |
+| `h2-console-enabled` | `spring.h2.console.enabled: true`; `web-allow-others: true` | medium / high |
+
+## Misconfiguration scan — `spring-taint misconfig <classes>`
+
+A bytecode pattern scan (any JDK) for insecure Spring code, reported under
+`insecure-config`:
+
+- **CSRF disabled** (`csrf().disable()`) — high; **clickjacking defence disabled**
+  (`frameOptions().disable()`) — medium;
+- **over-permissive CORS** (`@CrossOrigin(origins = "*")`) — medium;
+- **insecure cookies** (`setHttpOnly(false)` / `setSecure(false)`) — medium;
+- **sensitive data logged** — a password/token/card value (secret-named local,
+  field, or getter) passed to a logger — medium.
+
+The Spring Security checks read the lambda DSL (`http.csrf(c -> c.disable())`); the
+method-reference form (`AbstractHttpConfigurer::disable`) compiles to
+`invokedynamic` and is not matched.
+
 ---
 
 ## Taint transfers
