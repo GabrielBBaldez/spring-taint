@@ -210,6 +210,29 @@ findings whose trace touches a file changed against `<ref>`, using `git diff`. R
 a full scan periodically as well — diff matching is by file, so a flow split across
 a changed sink and an unchanged source could be missed.
 
+## Suppressing findings
+
+A finding can be silenced with a documented, in-code reason. Because
+`@SuppressWarnings` has source retention (it is not in bytecode), suppression is
+comment-based and needs the sources via `--src`:
+
+```java
+// spring-taint: suppress sql-injection - table name comes from an internal enum
+jdbcTemplate.execute("SELECT * FROM " + table.getValue());
+```
+
+The comment may sit on the flagged line or the line directly above it; use `*` as
+the rule to suppress any finding on the line. `scan --src <dir>` then drops matching
+findings (and reports how many). `spring-taint suppressions <dir>` lists every
+directive so they can be audited.
+
+## Validating a custom config
+
+`spring-taint validate-config [config.yml] --classpath <cp>` resolves every method
+signature in the config against a classpath and reports any that do not exist — a
+typo'd signature silently matches nothing, which otherwise looks like "no
+vulnerabilities" rather than "rule never ran".
+
 ## Known limitations
 
 - The reported trace is the shortest **call path** from source to sink (control

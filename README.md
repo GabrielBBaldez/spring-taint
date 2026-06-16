@@ -324,7 +324,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Hardcoded-secrets scanner (`secrets` command); mergeable `--config`
 - [x] Robustness pass: JNDI / XXE / log / template / JPQL sinks, file-upload and `@MatrixVariable` sources, `Optional` / `CompletableFuture` taint transfers, framework-internal sink filtering
 - [x] Configuration & misconfiguration audits: `config` (insecure `application.yml`/`.properties`) and `misconfig` (CSRF/clickjacking disabled, CORS `*`, insecure cookies, sensitive data logged)
-- [x] Adoption: per-finding confidence score (console + SARIF) and `scan --diff <ref>` for fast pull-request scans
+- [x] Adoption: per-finding confidence score (console + SARIF), `scan --diff <ref>` for fast pull-request scans, inline `// spring-taint: suppress` comments (`--src` / `suppressions`), and `validate-config` to catch typo'd custom rules
 
 ---
 

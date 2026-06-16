@@ -66,6 +66,10 @@ public final class ScanCommand implements Callable<Integer> {
                     + "(e.g. origin/main). Uses 'git diff'; run from the repository.")
     private String diffRef;
 
+    @Option(names = "--src", paramLabel = "DIR",
+            description = "Source directory; honours inline '// spring-taint: suppress RULE' comments.")
+    private Path src;
+
     @Override
     public Integer call() throws Exception {
         if (target == null || !Files.exists(target)) {
@@ -83,6 +87,9 @@ public final class ScanCommand implements Callable<Integer> {
 
         if (diffRef != null && !diffRef.isBlank()) {
             findings = filterToDiff(findings, diffRef);
+        }
+        if (src != null) {
+            findings = applySuppressions(findings, src);
         }
 
         new ConsoleReporter(System.out, verbose).report(findings);
@@ -153,6 +160,24 @@ public final class ScanCommand implements Callable<Integer> {
                 .collect(Collectors.toList());
         System.out.printf("Diff mode: %d of %d finding(s) touch files changed vs %s.%n",
                 kept.size(), findings.size(), ref);
+        return kept;
+    }
+
+    /** Drops findings silenced by an inline {@code // spring-taint: suppress RULE} comment. */
+    private List<Finding> applySuppressions(List<Finding> findings, Path sourceDir) throws IOException {
+        var suppressions = new io.github.gabrielbbaldez.springtaint.suppress.SuppressionScanner().scan(sourceDir);
+        if (suppressions.isEmpty()) {
+            return findings;
+        }
+        List<Finding> kept = findings.stream()
+                .filter(f -> !io.github.gabrielbbaldez.springtaint.suppress.SuppressionScanner
+                        .isSuppressed(f, suppressions))
+                .collect(Collectors.toList());
+        int suppressed = findings.size() - kept.size();
+        if (suppressed > 0) {
+            System.out.printf("Suppressed %d finding(s) via inline // spring-taint: suppress comments.%n",
+                    suppressed);
+        }
         return kept;
     }
 

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-06-16
+
+### Added
+- **Inline suppression** — silence a finding with a documented reason via a
+  `// spring-taint: suppress <rule> - <reason>` comment; `scan --src <dir>` honours
+  them and `spring-taint suppressions <dir>` lists them for audit. (Comment-based,
+  since `@SuppressWarnings` is absent from bytecode.)
+- **`validate-config` command** — resolves every method signature in a taint config
+  against a classpath and reports the ones that do not exist, so a typo is caught
+  instead of silently matching nothing.
+
 ## [0.8.0] - 2026-06-16
 
 ### Added
@@ -105,6 +116,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.9.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.9.0
 [0.8.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.6.0
