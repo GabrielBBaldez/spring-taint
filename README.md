@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Spring Taint Analyzer" width="104" height="104" />
+  <img src="logo.png" alt="Spring Taint Analyzer" width="140" />
 </p>
 
 # Spring Taint Analyzer
@@ -12,10 +12,10 @@
 > Interprocedural taint analysis for Spring Boot applications, built on [Tai-e](https://github.com/pascal-lab/Tai-e).
 > Detects multi-layer data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
 
-Detects **12 vulnerability classes** across **6 frameworks**, including cross-layer,
-reactive, cross-service, and cross-request stored injection — **33/33 vulnerable
-benchmark cases with 0 false positives**, plus a near-miss layer that flags
-*attempted-but-incorrect* sanitization. Ships as a CLI, a self-contained jar, a
+Detects **12 vulnerability classes** across **7 frameworks**, including cross-layer,
+reactive, cross-service, and cross-request stored injection — **36 of 37 vulnerable
+benchmark cases with 0 false positives** (the near-miss layer catches the last one and
+flags *attempted-but-incorrect* sanitization). Ships as a CLI, a self-contained jar, a
 Docker image, and a GitHub Action with SARIF 2.1 output.
 
 ---
