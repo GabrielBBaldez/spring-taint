@@ -74,8 +74,10 @@ sinks:
 # 3. Sanitizers (taint is cleared at the returned value)
 # ---------------------------------------------------------------------------
 sanitizers:
-  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String)>", index: result }
-  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String,java.lang.String)>", index: result }
+  # index 0 = the input parameter: Tai-e's ParamSanitizer clears taint at the
+  # sanitized argument (so the escaped result is clean).
+  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String)>", index: 0 }
+  - { method: "<org.springframework.web.util.HtmlUtils: java.lang.String htmlEscape(java.lang.String,java.lang.String)>", index: 0 }
   # Parameterized JDBC binding is modelled as a sanitizer for the bound value.
   # NamedParameterJdbcTemplate / PreparedStatement carry user data as bound
   # parameters, not as concatenated SQL text.

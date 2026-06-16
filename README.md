@@ -237,7 +237,7 @@ spring-taint scan <classes> --libs <dependency-classpath> --config config/spring
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [ ] precision/recall validation — currently detects SQL injection (direct, cross-layer through-service, via-Kafka) and path traversal with **0 false positives**; reflected XSS and command injection pending (sink receiver comes from a library-returned object)
+- [x] precision/recall on the current benchmark — **6/6 vulnerable cases detected, 0 false positives** (SQL injection direct / cross-layer through-service / via-Kafka, reflected XSS, path traversal, command injection; safe cases not flagged)
 - [ ] GitHub Action
 - [ ] Public release v0.1.0
 

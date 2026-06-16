@@ -4,6 +4,7 @@ import io.github.gabrielbbaldez.springtaint.config.SanitizerSpec;
 import io.github.gabrielbbaldez.springtaint.config.SinkSpec;
 import io.github.gabrielbbaldez.springtaint.config.TaintConfig;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringEntryPointPlugin;
+import io.github.gabrielbbaldez.springtaint.engine.taie.SpringLibraryModelPlugin;
 import io.github.gabrielbbaldez.springtaint.engine.taie.SpringTaintConfigProvider;
 import io.github.gabrielbbaldez.springtaint.report.Finding;
 import io.github.gabrielbbaldez.springtaint.report.FlowStep;
@@ -88,9 +89,16 @@ public final class TaiETaintEngine implements TaintEngine {
         // analysed, which is both correct for our purpose and avoids diving into the
         // framework's optional dependencies.
         String ptaOptions = "only-app:true"
+                // Java 17 compiles string concatenation to invokedynamic
+                // (makeConcatWithConstants); model it so taint flows through "a" + tainted.
+                + ";handle-invokedynamic:true"
+                // Keep string objects distinct so a sanitizer's clean result is not
+                // merged with the tainted input (otherwise htmlEscape would be a no-op).
+                + ";merge-string-objects:false"
                 + ";taint-config:" + posix(configDir)
                 + ";taint-config-providers:[" + SpringTaintConfigProvider.class.getName() + "]"
-                + ";plugins:[" + SpringEntryPointPlugin.class.getName() + "]";
+                + ";plugins:[" + SpringEntryPointPlugin.class.getName()
+                + "," + SpringLibraryModelPlugin.class.getName() + "]";
 
         List<String> args = new ArrayList<>();
         args.add("-pp");                       // model the JDK with the current JVM
