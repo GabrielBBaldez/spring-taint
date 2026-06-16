@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B -ntp clean package
+
+      - name: Resolve benchmark classpath
+        run: >
+          mvn -B -ntp -pl spring-taint-benchmark dependency:build-classpath
+          -DincludeScope=test -Dmdep.outputFile=bench-cp.txt
+
+      - name: Scan the benchmark (dogfooding)
+        # The benchmark is intentionally vulnerable, so a non-zero exit is expected.
+        continue-on-error: true
+        run: >
+          java -Xmx4g -jar spring-taint-engine/target/spring-taint-all.jar scan
+          spring-taint-benchmark/target/classes
+          --libs "$(cat spring-taint-benchmark/bench-cp.txt)"
+          --output spring-taint.sarif
+
+      - name: Upload SARIF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-taint-sarif
+          path: spring-taint.sarif

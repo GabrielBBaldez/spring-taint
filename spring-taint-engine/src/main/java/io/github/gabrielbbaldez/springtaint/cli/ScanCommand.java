@@ -12,6 +12,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,15 +31,14 @@ import java.util.stream.Collectors;
         description = "Scan a compiled Spring Boot project for taint vulnerabilities.")
 public final class ScanCommand implements Callable<Integer> {
 
-    private static final Path DEFAULT_CONFIG = Path.of("config", "spring-taint.yml");
-
     @Parameters(index = "0", paramLabel = "TARGET",
             description = "Compiled project to scan: a directory of .class files or a JAR.")
     private Path target;
 
     @Option(names = {"-c", "--config"}, paramLabel = "FILE",
-            description = "Taint configuration (default: ${DEFAULT-VALUE}).")
-    private Path config = DEFAULT_CONFIG;
+            description = "Taint configuration (default: ./config/spring-taint.yml, "
+                    + "or the bundled default).")
+    private Path config;
 
     @Option(names = {"-o", "--output"}, paramLabel = "FILE",
             description = "Write a SARIF 2.1 report to this file.")
@@ -61,12 +62,10 @@ public final class ScanCommand implements Callable<Integer> {
             System.err.println("Target not found: " + target);
             return 2;
         }
-        if (!Files.exists(config)) {
-            System.err.println("Config not found: " + config + " (pass one with --config)");
+        TaintConfig taintConfig = loadConfig();
+        if (taintConfig == null) {
             return 2;
         }
-
-        TaintConfig taintConfig = TaintConfigLoader.load(config);
         AnalysisRequest request = new AnalysisRequest(target, libs, taintConfig, severities, verbose);
 
         TaintEngine engine = new TaiETaintEngine();
@@ -81,6 +80,31 @@ public final class ScanCommand implements Callable<Integer> {
 
         // Non-zero exit when vulnerabilities are found, so CI can gate on it.
         return findings.isEmpty() ? 0 : 1;
+    }
+
+    /**
+     * Loads the taint config: explicit {@code --config}, else
+     * {@code ./config/spring-taint.yml}, else the default bundled in the jar.
+     */
+    private TaintConfig loadConfig() throws IOException {
+        if (config != null) {
+            if (!Files.exists(config)) {
+                System.err.println("Config not found: " + config);
+                return null;
+            }
+            return TaintConfigLoader.load(config);
+        }
+        Path local = Path.of("config", "spring-taint.yml");
+        if (Files.exists(local)) {
+            return TaintConfigLoader.load(local);
+        }
+        try (InputStream bundled = getClass().getResourceAsStream("/spring-taint.yml")) {
+            if (bundled == null) {
+                System.err.println("No taint config found; pass one with --config.");
+                return null;
+            }
+            return TaintConfigLoader.load(bundled);
+        }
     }
 
     private static List<Finding> filter(List<Finding> findings, List<String> severities) {

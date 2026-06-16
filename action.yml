@@ -1,0 +1,30 @@
+name: 'Spring Taint Analysis'
+description: 'Interprocedural taint analysis for Spring Boot, built on Tai-e. Detects multi-layer data-flow vulnerabilities SonarQube cannot reach.'
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Compiled classes directory or JAR to scan (relative to the workspace). Build your project first.'
+    required: true
+  libs:
+    description: 'Dependency classpath needed to resolve the target (path-separator-joined), e.g. from `mvn dependency:build-classpath`.'
+    required: false
+    default: ''
+  config:
+    description: 'Custom taint configuration file. Defaults to the bundled Spring config.'
+    required: false
+    default: ''
+  output:
+    description: 'SARIF 2.1 output file.'
+    required: false
+    default: 'spring-taint.sarif'
+  severity:
+    description: 'Only report these severities (comma-separated: critical,high,medium,low).'
+    required: false
+    default: ''
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

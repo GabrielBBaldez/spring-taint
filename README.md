@@ -210,16 +210,53 @@ mvn -q -pl spring-taint-benchmark package   # compile the benchmark cases only
 
 ### Running a scan
 
-Pass the target's dependency classpath with `--libs` so types like `JdbcTemplate`
-resolve:
+Build the self-contained jar and scan compiled classes. Pass the target's
+dependency classpath with `--libs` so framework types like `JdbcTemplate` resolve
+(the taint config is bundled, so `--config` is optional):
 
 ```bash
-spring-taint scan <classes> --libs <dependency-classpath> --config config/spring-taint.yml
+java -jar spring-taint-engine/target/spring-taint-all.jar \
+  scan target/classes --libs "$(... your dependency classpath ...)" \
+  --output results.sarif
 ```
 
 > **The analysis currently runs on JDK 17.** Tai-e 0.5.1's frontend cannot read
 > JDK 21 bytecode, so run the analyzer with a JDK 17 runtime (the project still
 > compiles to Java 17 on any JDK 17+).
+
+---
+
+## GitHub Action
+
+Run the analyzer in CI and upload findings to GitHub code scanning. The action
+runs as a Docker container on JDK 17; give it the compiled classes and the
+dependency classpath:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-java@v4
+  with: { distribution: temurin, java-version: '17' }
+
+- run: mvn -B -ntp package -DskipTests
+- id: cp
+  run: echo "value=$(mvn -q dependency:build-classpath -Dmdep.outputFilterFile=/dev/stdout)" >> "$GITHUB_OUTPUT"
+
+- name: Spring Taint Analysis
+  uses: GabrielBBaldez/spring-taint@main
+  with:
+    path: target/classes
+    libs: ${{ steps.cp.outputs.value }}
+    output: results.sarif
+    severity: critical,high
+
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: results.sarif
+```
+
+See [`action.yml`](action.yml) for all inputs. This repo also scans its own
+benchmark on every push — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ---
 
@@ -234,7 +271,7 @@ spring-taint scan <classes> --libs <dependency-classpath> --config config/spring
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
 - [x] precision/recall on the current benchmark — **11/11 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection, open redirect
-- [ ] GitHub Action
+- [x] GitHub Action (Docker) + self-contained jar + CI workflow
 - [ ] Public release v0.1.0
 
 ---
