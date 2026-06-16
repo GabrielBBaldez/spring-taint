@@ -106,8 +106,6 @@ export function DashboardPage() {
       <Headline total={total} files={stats.files} sevCount={stats.sevCount} />
       <Stats total={total} sevCount={stats.sevCount} files={stats.files} rules={stats.rules} />
 
-      <SuggestedFixes findings={report?.findings ?? []} />
-
       <section className="panels">
         <SeverityDonut sevCount={stats.sevCount} total={total} />
         <RuleBars ruleCount={stats.ruleCount} severityOf={(r) => stats.ruleSeverity[r] ?? severityOf(r)} />
@@ -121,6 +119,8 @@ export function DashboardPage() {
         query={query}
         setQuery={setQuery}
       />
+
+      <SuggestedFixes findings={report?.findings ?? []} />
 
       {dragging && (
         <div className="dropzone">

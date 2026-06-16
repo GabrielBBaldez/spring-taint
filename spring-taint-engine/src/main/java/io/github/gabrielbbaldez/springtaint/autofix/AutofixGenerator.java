@@ -241,26 +241,52 @@ public final class AutofixGenerator {
         return sql.toString();
     }
 
-    /** A minimal unified-style diff of the changed region. */
+    /**
+     * A minimal line diff (LCS-based): emits only the lines that actually changed,
+     * collapsing unchanged runs to a {@code ...} marker. A naive prefix/suffix trim
+     * would bracket the whole region between two distant edits (e.g. an added import
+     * at the top and a rewritten line at the bottom), dumping the entire class.
+     */
     private static String diff(String oldSource, String newSource) {
         String[] a = oldSource.split("\n", -1);
         String[] b = newSource.split("\n", -1);
-        int start = 0;
-        while (start < a.length && start < b.length && a[start].equals(b[start])) {
-            start++;
-        }
-        int endA = a.length - 1;
-        int endB = b.length - 1;
-        while (endA >= start && endB >= start && a[endA].equals(b[endB])) {
-            endA--;
-            endB--;
+        int n = a.length;
+        int m = b.length;
+        int[][] lcs = new int[n + 1][m + 1];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = m - 1; j >= 0; j--) {
+                lcs[i][j] = a[i].equals(b[j])
+                        ? lcs[i + 1][j + 1] + 1
+                        : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+            }
         }
         StringBuilder out = new StringBuilder();
-        for (int i = start; i <= endA; i++) {
-            out.append("  - ").append(a[i].stripTrailing()).append('\n');   // keep indentation, drop trailing CR
-        }
-        for (int i = start; i <= endB; i++) {
-            out.append("  + ").append(b[i].stripTrailing()).append('\n');
+        int i = 0;
+        int j = 0;
+        boolean sawChange = false;
+        boolean gap = false;
+        while (i < n || j < m) {
+            if (i < n && j < m && a[i].equals(b[j])) {
+                if (sawChange) {
+                    gap = true;   // an unchanged line between edits -> collapse to "..."
+                }
+                i++;
+                j++;
+            } else if (j >= m || (i < n && lcs[i + 1][j] >= lcs[i][j + 1])) {
+                if (gap) {
+                    out.append("  ...\n");
+                    gap = false;
+                }
+                out.append("  - ").append(a[i++].stripTrailing()).append('\n');
+                sawChange = true;
+            } else {
+                if (gap) {
+                    out.append("  ...\n");
+                    gap = false;
+                }
+                out.append("  + ").append(b[j++].stripTrailing()).append('\n');
+                sawChange = true;
+            }
         }
         return out.toString();
     }
