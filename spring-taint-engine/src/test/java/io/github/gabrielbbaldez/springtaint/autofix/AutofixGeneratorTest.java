@@ -80,4 +80,28 @@ class AutofixGeneratorTest {
 
         assertTrue(patches.isEmpty(), "a duplicated simple name must not be auto-fixed");
     }
+
+    @Test
+    void xssFixDiffShowsOnlyChangedLinesNotTheWholeClass(@TempDir Path dir) throws Exception {
+        // The XSS fix adds an import at the top and rewrites the write line at the bottom.
+        // The diff must show only those changes, not dump every unchanged line in between.
+        Fixtures.write(dir, "p/Greeting.java", """
+                package p;
+                class Greeting {
+                    void greet(String name, Resp response) {
+                        response.getWriter().write("<h1>" + name + "</h1>");
+                    }
+                }
+                """);
+        Finding xss = new Finding("xss", Severity.HIGH, "msg", null, "Greeting.java", 4,
+                List.of(new FlowStep("Greeting.java", 3, "source"), new FlowStep("Greeting.java", 4, "sink")));
+
+        List<Patch> patches = new AutofixGenerator().generate(List.of(xss), dir);
+
+        assertEquals(1, patches.size());
+        String diff = patches.get(0).diff();
+        assertTrue(diff.contains("htmlEscape"), "the fix should escape the written value");
+        assertFalse(diff.contains("class Greeting"), "a minimal diff must omit unchanged lines:\n" + diff);
+        assertTrue(diff.lines().count() <= 8, "the diff should be a handful of lines, was:\n" + diff);
+    }
 }

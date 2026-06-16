@@ -104,4 +104,25 @@ class NearMissAnnotatorTest {
         List<Finding> out = new NearMissAnnotator().annotate(List.of(finding("sql-injection", "C.java", 4)), dir);
         assertNull(out.get(0).nearMiss());
     }
+
+    @Test
+    void detectsWrongContextEvenWithAControlFlowBlockBetween(@TempDir Path dir) throws Exception {
+        // A closing brace of an if/for/try between the escape and the redirect must NOT
+        // clear the escaped-variable scope -- only a method boundary should.
+        Fixtures.write(dir, "C.java", """
+                package p;
+                class C {
+                    void go(String url, boolean cond, Resp resp) {
+                        String safe = HtmlUtils.htmlEscape(url);
+                        if (cond) {
+                            audit(url);
+                        }
+                        resp.sendRedirect(safe);
+                    }
+                }
+                """);
+        List<Finding> out = new NearMissAnnotator().annotate(List.of(), dir);
+        assertEquals(1, out.size(), "an if-block must not end the escaped-variable scope");
+        assertEquals("open-redirect", out.get(0).ruleId());
+    }
 }
