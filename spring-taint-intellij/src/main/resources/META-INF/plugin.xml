@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>io.github.gabrielbbaldez.springtaint</id>
+    <name>Spring Taint</name>
+    <vendor url="https://github.com/GabrielBBaldez">Gabriel Baldez</vendor>
+
+    <description><![CDATA[
+        Interprocedural taint analysis for Spring Boot, powered by the spring-taint engine
+        (built on Tai-e). Surfaces source-to-sink vulnerability flows that cross
+        controller / service / repository layers, with click-to-navigate.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Spring Taint"
+                    anchor="bottom"
+                    factoryClass="io.github.gabrielbbaldez.springtaint.intellij.SpringTaintToolWindowFactory"/>
+    </extensions>
+
+    <actions>
+        <action id="SpringTaint.Scan"
+                class="io.github.gabrielbbaldez.springtaint.intellij.ScanAction"
+                text="Run Spring Taint Scan"
+                description="Run the Spring Taint analyzer on this project">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
