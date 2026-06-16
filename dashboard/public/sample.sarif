@@ -670,7 +670,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"SELECT * FROM items WHERE term = '\" + value + \"'\"); // taint-sink -> EXPECTED sql-injection\n  +         return jdbc.update(\"SELECT * FROM items WHERE term = ?\", value); // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -726,7 +730,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"DELETE FROM users WHERE id = \" + result);   // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         return jdbc.update(\"DELETE FROM users WHERE id = ?\", result);   // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -782,7 +790,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"DELETE FROM users WHERE name = '\" + name + \"'\"); // taint-sink -> EXPECTED sql-injection\n  +         return jdbc.update(\"DELETE FROM users WHERE name = ?\", name); // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -838,7 +850,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"DELETE FROM users WHERE id = \" + id); // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         return jdbc.update(\"DELETE FROM users WHERE id = ?\", id); // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -894,7 +910,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT * FROM users WHERE id = \" + payload;   // tainted concatenation\n  -         jdbc.execute(sql);                                          // taint-sink: JdbcTemplate.execute -> EXPECTED sql-injection\n  +         String sql = \"SELECT * FROM users WHERE id = ?\";   // tainted concatenation\n  +         jdbc.update(sql, payload);                                          // taint-sink: JdbcTemplate.execute -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -950,7 +970,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"SELECT * FROM users WHERE name = '\" + name + \"'\");  // taint-sink -> EXPECTED sql-injection\n  +         return jdbc.update(\"SELECT * FROM users WHERE name = ?\", name);  // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1006,7 +1030,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT * FROM users WHERE role = '\" + role + \"'\"; // tainted concatenation\n  -         return jdbc.update(sql);                                        // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         String sql = \"SELECT * FROM users WHERE role = ?\"; // tainted concatenation\n  +         return jdbc.update(sql, role);                                        // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1063,7 +1091,11 @@
       "properties" : {
         "severity" : "critical",
         "confidence" : 99,
-        "nearMiss" : "character filtering (replace/replaceAll) does not prevent SQL injection (backslash escaping, encodings, SQL functions); use a parameterized query"
+        "nearMiss" : "character filtering (replace/replaceAll) does not prevent SQL injection (backslash escaping, encodings, SQL functions); use a parameterized query",
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT * FROM users WHERE name = '\" + safe + \"'\";\n  -         return jdbc.update(sql);                                        // taint-sink -> EXPECTED sql-injection\n  +         String sql = \"SELECT * FROM users WHERE name = ?\";\n  +         return jdbc.update(sql, safe);                                        // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1119,7 +1151,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"DELETE FROM users WHERE id = \" + unwrapped);    // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         return jdbc.update(\"DELETE FROM users WHERE id = ?\", unwrapped);    // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1175,7 +1211,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"DELETE FROM users WHERE id = \" + id); // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         return jdbc.update(\"DELETE FROM users WHERE id = ?\", id); // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1231,7 +1271,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT * FROM users WHERE id = \" + payload;   // tainted concatenation\n  -         jdbc.execute(sql);                                          // taint-sink: JdbcTemplate.execute -> EXPECTED sql-injection\n  +         String sql = \"SELECT * FROM users WHERE id = ?\";   // tainted concatenation\n  +         jdbc.update(sql, payload);                                          // taint-sink: JdbcTemplate.execute -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1287,7 +1331,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"INSERT INTO users(name) VALUES('\" + name + \"')\");  // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         return jdbc.update(\"INSERT INTO users(name) VALUES(?)\", name);  // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1343,7 +1391,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         jdbc.execute(\"INSERT INTO cache(v) VALUES ('\" + data + \"')\"); // taint-sink -> EXPECTED sql-injection\n  +         jdbc.update(\"INSERT INTO cache(v) VALUES (?)\", data); // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1399,7 +1451,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"DELETE FROM users WHERE id = \" + id;  // tainted string concatenation\n  -         return jdbc.update(sql);                            // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n  +         String sql = \"DELETE FROM users WHERE id = ?\";  // tainted string concatenation\n  +         return jdbc.update(sql, id);                            // taint-sink: JdbcTemplate.update -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1469,7 +1525,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT name FROM users WHERE name = '\" + name + \"'\"; // tainted concatenation\n  -         return jdbc.query(sql, NAME_MAPPER);                               // taint-sink: JdbcTemplate.query -> EXPECTED sql-injection\n  +         String sql = \"SELECT name FROM users WHERE name = ?\"; // tainted concatenation\n  +         return jdbc.query(sql, NAME_MAPPER, name);                               // taint-sink: JdbcTemplate.query -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1525,7 +1585,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 99
+        "confidence" : 99,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         return jdbc.update(\"UPDATE journal SET v = '\" + stored + \"' WHERE id = 1\"); // taint-sink -> EXPECTED sql-injection\n  +         return jdbc.update(\"UPDATE journal SET v = ? WHERE id = 1\", stored); // taint-sink -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1595,7 +1659,11 @@
       } ],
       "properties" : {
         "severity" : "critical",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "use a parameterized query (1 bound parameter)",
+          "diff" : "  -         String sql = \"SELECT id, name FROM users WHERE name = '\" + name + \"'\"; // tainted concatenation\n  -         return jdbc.query(sql, MAPPER);                                        // taint-sink: JdbcTemplate.query -> EXPECTED sql-injection\n  +         String sql = \"SELECT id, name FROM users WHERE name = ?\"; // tainted concatenation\n  +         return jdbc.query(sql, MAPPER, name);                                        // taint-sink: JdbcTemplate.query -> EXPECTED sql-injection\n"
+        }
       }
     }, {
       "ruleId" : "sql-injection",
@@ -1819,7 +1887,11 @@
       } ],
       "properties" : {
         "severity" : "high",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  -         response.getWriter().write(\"<p>\" + out + \"</p>\");                  // taint-sink: PrintWriter.write -> EXPECTED xss\n  +         response.getWriter().write(\"<p>\" + HtmlUtils.htmlEscape(out) + \"</p>\");                  // taint-sink: PrintWriter.write -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xss",
@@ -1876,7 +1948,11 @@
       "properties" : {
         "severity" : "high",
         "confidence" : 90,
-        "nearMiss" : "a sanitizer is called but its result is discarded; assign it and use the escaped value, not the original"
+        "nearMiss" : "a sanitizer is called but its result is discarded; assign it and use the escaped value, not the original",
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  -         response.getWriter().write(\"<div>\" + input + \"</div>\");        // uses the original -> EXPECTED xss\n  +         response.getWriter().write(\"<div>\" + HtmlUtils.htmlEscape(input) + \"</div>\");        // uses the original -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xss",
@@ -1933,7 +2009,11 @@
       "properties" : {
         "severity" : "high",
         "confidence" : 90,
-        "nearMiss" : "blacklist filtering (replace/replaceAll) is trivially bypassable (e.g. <scr<script>ipt>); use contextual output escaping such as HtmlUtils.htmlEscape"
+        "nearMiss" : "blacklist filtering (replace/replaceAll) is trivially bypassable (e.g. <scr<script>ipt>); use contextual output escaping such as HtmlUtils.htmlEscape",
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  - \n  - /**\n  -  * Near-miss (blacklist instead of whitelist): the developer removes the literal\n  -  * {@code <script>} tag and believes it is safe, but blacklists are trivially\n  -  * bypassed ({@code <scr<script>ipt>} collapses to {@code <script>}, plus\n  -  * {@code <SCRIPT>}, {@code <img onerror=>}, …). The correct fix is contextual\n  -  * escaping.\n  -  *\n  -  * <p>EXPECTED: xss (CWE-79), flagged as a near-miss sanitizer.\n  -  */\n  - @RestController\n  - public class NearMissXssController {\n  - \n  -     @GetMapping(\"/nm/xss\")\n  -     public void render(@RequestParam String input, HttpServletResponse response) throws IOException { // taint-source: @RequestParam input\n  -         String safe = input.replace(\"<script>\", \"\");                    // near-miss: blacklist is bypassable\n  -         response.getWriter().write(\"<div>\" + safe + \"</div>\");          // taint-sink -> EXPECTED xss\n  + import org.springframework.web.util.HtmlUtils;\n  + \n  + /**\n  +  * Near-miss (blacklist instead of whitelist): the developer removes the literal\n  +  * {@code <script>} tag and believes it is safe, but blacklists are trivially\n  +  * bypassed ({@code <scr<script>ipt>} collapses to {@code <script>}, plus\n  +  * {@code <SCRIPT>}, {@code <img onerror=>}, …). The correct fix is contextual\n  +  * escaping.\n  +  *\n  +  * <p>EXPECTED: xss (CWE-79), flagged as a near-miss sanitizer.\n  +  */\n  + @RestController\n  + public class NearMissXssController {\n  + \n  +     @GetMapping(\"/nm/xss\")\n  +     public void render(@RequestParam String input, HttpServletResponse response) throws IOException { // taint-source: @RequestParam input\n  +         String safe = input.replace(\"<script>\", \"\");                    // near-miss: blacklist is bypassable\n  +         response.getWriter().write(\"<div>\" + HtmlUtils.htmlEscape(safe) + \"</div>\");          // taint-sink -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xss",
@@ -1989,7 +2069,11 @@
       } ],
       "properties" : {
         "severity" : "high",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  - \n  - /**\n  -  * Reflected XSS: an untrusted request parameter is written into the HTTP\n  -  * response without HTML escaping.\n  -  *\n  -  * <p>EXPECTED: xss (CWE-79).\n  -  */\n  - @RestController\n  - public class ReflectedXssController {\n  - \n  -     @GetMapping(\"/greet\")\n  -     public void greet(@RequestParam String name, HttpServletResponse response) throws IOException { // taint-source: @RequestParam name\n  -         response.getWriter().write(\"<h1>Hello \" + name + \"</h1>\"); // taint-sink: PrintWriter.write -> EXPECTED xss\n  + import org.springframework.web.util.HtmlUtils;\n  + \n  + /**\n  +  * Reflected XSS: an untrusted request parameter is written into the HTTP\n  +  * response without HTML escaping.\n  +  *\n  +  * <p>EXPECTED: xss (CWE-79).\n  +  */\n  + @RestController\n  + public class ReflectedXssController {\n  + \n  +     @GetMapping(\"/greet\")\n  +     public void greet(@RequestParam String name, HttpServletResponse response) throws IOException { // taint-source: @RequestParam name\n  +         response.getWriter().write(\"<h1>Hello \" + HtmlUtils.htmlEscape(name) + \"</h1>\"); // taint-sink: PrintWriter.write -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xss",
@@ -2045,7 +2129,11 @@
       } ],
       "properties" : {
         "severity" : "high",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  - \n  - /**\n  -  * Reflected XSS where the source is a {@code @RequestHeader}.\n  -  *\n  -  * <p>EXPECTED: xss (CWE-79).\n  -  */\n  - @RestController\n  - public class RequestHeaderXssController {\n  - \n  -     @GetMapping(\"/echo\")\n  -     public void echo(@RequestHeader(\"X-Message\") String message,\n  -                      HttpServletResponse response) throws IOException { // taint-source: @RequestHeader message\n  -         response.getWriter().write(\"<p>\" + message + \"</p>\");          // taint-sink: PrintWriter.write -> EXPECTED xss\n  + import org.springframework.web.util.HtmlUtils;\n  + \n  + /**\n  +  * Reflected XSS where the source is a {@code @RequestHeader}.\n  +  *\n  +  * <p>EXPECTED: xss (CWE-79).\n  +  */\n  + @RestController\n  + public class RequestHeaderXssController {\n  + \n  +     @GetMapping(\"/echo\")\n  +     public void echo(@RequestHeader(\"X-Message\") String message,\n  +                      HttpServletResponse response) throws IOException { // taint-source: @RequestHeader message\n  +         response.getWriter().write(\"<p>\" + HtmlUtils.htmlEscape(message) + \"</p>\");          // taint-sink: PrintWriter.write -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xss",
@@ -2101,7 +2189,11 @@
       } ],
       "properties" : {
         "severity" : "high",
-        "confidence" : 90
+        "confidence" : 90,
+        "fix" : {
+          "description" : "escape output with HtmlUtils.htmlEscape (1 value)",
+          "diff" : "  - \n  - /**\n  -  * Request 2 of a stored-injection pair: reads persisted data and renders it\n  -  * without escaping. The taint enters through the repository read (persistence\n  -  * source), not through this request's parameters — a cross-request flow that\n  -  * same-request analyzers miss.\n  -  *\n  -  * <p>EXPECTED: xss (CWE-79), stored / second-order.\n  -  */\n  - @RestController\n  - public class StoredXssReadController {\n  - \n  -     private final NoteRepository repository;\n  - \n  -     public StoredXssReadController(NoteRepository repository) {\n  -         this.repository = repository;\n  -     }\n  - \n  -     @GetMapping(\"/notes/{id}\")\n  -     public void read(@PathVariable long id, HttpServletResponse response) throws IOException {\n  -         String text = repository.findText(id);                  // taint-source: @Repository read (stored data)\n  -         response.getWriter().write(\"<p>\" + text + \"</p>\");      // taint-sink: PrintWriter.write -> EXPECTED xss\n  + import org.springframework.web.util.HtmlUtils;\n  + \n  + /**\n  +  * Request 2 of a stored-injection pair: reads persisted data and renders it\n  +  * without escaping. The taint enters through the repository read (persistence\n  +  * source), not through this request's parameters — a cross-request flow that\n  +  * same-request analyzers miss.\n  +  *\n  +  * <p>EXPECTED: xss (CWE-79), stored / second-order.\n  +  */\n  + @RestController\n  + public class StoredXssReadController {\n  + \n  +     private final NoteRepository repository;\n  + \n  +     public StoredXssReadController(NoteRepository repository) {\n  +         this.repository = repository;\n  +     }\n  + \n  +     @GetMapping(\"/notes/{id}\")\n  +     public void read(@PathVariable long id, HttpServletResponse response) throws IOException {\n  +         String text = repository.findText(id);                  // taint-source: @Repository read (stored data)\n  +         response.getWriter().write(\"<p>\" + HtmlUtils.htmlEscape(text) + \"</p>\");      // taint-sink: PrintWriter.write -> EXPECTED xss\n"
+        }
       }
     }, {
       "ruleId" : "xxe",

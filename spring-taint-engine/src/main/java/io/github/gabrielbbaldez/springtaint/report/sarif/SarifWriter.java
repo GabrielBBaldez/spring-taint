@@ -4,14 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.gabrielbbaldez.springtaint.autofix.Patch;
 import io.github.gabrielbbaldez.springtaint.report.Finding;
 import io.github.gabrielbbaldez.springtaint.report.FlowStep;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,6 +30,23 @@ public final class SarifWriter {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory nf = JsonNodeFactory.instance;
+
+    /** Suggested fixes keyed by rule|file|line, attached to matching results. Optional. */
+    private Map<String, Patch> fixes = Map.of();
+
+    /** Attaches autofix suggestions so a matching result carries {@code properties.fix}. */
+    public SarifWriter withFixes(List<Patch> patches) {
+        Map<String, Patch> index = new HashMap<>();
+        for (Patch p : patches) {
+            index.putIfAbsent(fixKey(p.rule(), p.file().getFileName().toString(), p.line()), p);
+        }
+        this.fixes = index;
+        return this;
+    }
+
+    private static String fixKey(String rule, String file, int line) {
+        return rule + "|" + file + "|" + line;
+    }
 
     /** Builds the SARIF document as a pretty-printed JSON string. */
     public String toJson(List<Finding> findings) {
@@ -103,6 +123,12 @@ public final class SarifWriter {
         }
         if (f.nearMiss() != null) {
             props.put("nearMiss", f.nearMiss());
+        }
+        Patch fix = fixes.get(fixKey(f.ruleId(), f.file(), f.line()));
+        if (fix != null) {
+            ObjectNode fixNode = props.putObject("fix");
+            fixNode.put("description", fix.description());
+            fixNode.put("diff", fix.diff());
         }
         return result;
     }

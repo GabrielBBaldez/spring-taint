@@ -124,7 +124,12 @@ public final class ScanCommand implements Callable<Integer> {
         }
 
         if (output != null) {
-            new SarifWriter().write(output, findings);
+            // When sources are available, attach the autofix suggestions so the SARIF
+            // (and the dashboard that reads it) can show the proposed fix per finding.
+            List<io.github.gabrielbbaldez.springtaint.autofix.Patch> sarifFixes = (src != null)
+                    ? new io.github.gabrielbbaldez.springtaint.autofix.AutofixGenerator().generate(findings, src)
+                    : List.of();
+            new SarifWriter().withFixes(sarifFixes).write(output, findings);
             System.out.println("SARIF report written to " + output);
         }
 

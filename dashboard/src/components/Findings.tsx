@@ -96,9 +96,32 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
               <b>near-miss sanitizer:</b> {finding.nearMiss}
             </div>
           )}
+          {finding.fix && <SuggestedFix fix={finding.fix} />}
           <TaintFlow finding={finding} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SuggestedFix({ fix }: { fix: { description: string; diff: string } }) {
+  const lines = fix.diff.replace(/\n+$/, "").split("\n");
+  return (
+    <div className="fix">
+      <div className="fix-head">
+        <span className="fix-tag">suggested fix</span>
+        {fix.description}
+      </div>
+      <pre className="fix-diff">
+        {lines.map((l, i) => {
+          const kind = l.startsWith("  + ") ? "add" : l.startsWith("  - ") ? "del" : "ctx";
+          return (
+            <div key={i} className={`dl ${kind}`}>
+              {l.replace(/^ {2}/, "")}
+            </div>
+          );
+        })}
+      </pre>
     </div>
   );
 }

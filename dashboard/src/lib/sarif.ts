@@ -15,6 +15,7 @@ export interface Finding {
   trace: TraceStep[];
   confidence?: number;
   nearMiss?: string;
+  fix?: { description: string; diff: string };
 }
 
 export interface ParsedReport {
@@ -97,6 +98,10 @@ export function parseSarif(data: any): ParsedReport {
       trace,
       confidence: typeof props.confidence === "number" ? props.confidence : undefined,
       nearMiss: typeof props.nearMiss === "string" ? props.nearMiss : undefined,
+      fix:
+        props.fix && typeof props.fix.diff === "string"
+          ? { description: String(props.fix.description ?? ""), diff: props.fix.diff }
+          : undefined,
     };
   });
 

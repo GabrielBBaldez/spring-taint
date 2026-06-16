@@ -194,6 +194,14 @@ body::before {
 .conf { margin-left: 8px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; color: var(--venom); border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; vertical-align: middle; }
 .nearmiss { margin: 0 0 12px; font-size: 12px; line-height: 1.45; color: #ffce7a; background: rgba(255, 177, 61, .10); border-left: 2px solid #ffb13d; border-radius: 4px; padding: 7px 11px; }
 .nearmiss b { color: #ffb13d; font-weight: 600; }
+.fix { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.fix-head { font-size: 12px; color: var(--text-dim); padding: 7px 11px; background: rgba(57, 255, 20, .06); border-bottom: 1px solid var(--line); }
+.fix-tag { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--venom); margin-right: 8px; }
+.fix-diff { margin: 0; padding: 8px 11px; font-family: var(--mono); font-size: 12px; line-height: 1.55; overflow-x: auto; }
+.fix-diff .dl { white-space: pre; }
+.fix-diff .dl.add { color: #57e08a; background: rgba(87, 224, 138, .08); }
+.fix-diff .dl.del { color: #ff7a88; background: rgba(255, 84, 104, .08); }
+.fix-diff .dl.ctx { color: var(--muted); }
 .f-toggle { color: var(--muted); transition: transform .25s, color .2s; }
 .finding.open .f-toggle { transform: rotate(90deg); color: var(--venom); }
 
