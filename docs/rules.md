@@ -7,7 +7,9 @@ sanitizers are concrete library methods, configurable in
 
 ## Sources (all rules)
 
-External input is taint. Recognized entry points:
+External input is taint. Library signatures are recognized in both their `jakarta.*`
+(Spring Boot 3) and `javax.*` (Spring Boot 2 / Java EE) forms. A value read from a
+tainted `@RequestParam Map` via `Map.get` is itself tainted. Recognized entry points:
 
 | Framework | Annotations / methods |
 |---|---|

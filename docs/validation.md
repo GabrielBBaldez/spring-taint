@@ -3,8 +3,9 @@
 Beyond the synthetic [benchmark](../spring-taint-benchmark/README.md) (which measures
 recall and precision against known ground truth), the analyzer is run against real
 open-source Spring Boot applications: a clean app to measure **precision** (false
-positives on code not written for it) and an intentionally-vulnerable app to measure
-**recall** (does it find a real, cross-layer flaw).
+positives on code not written for it) and intentionally-vulnerable apps to measure
+**recall** (does it find a real, cross-layer flaw) — across both Spring Boot 3
+(`jakarta`) and Spring Boot 2 (`javax`).
 
 ## spring-petclinic
 
@@ -65,6 +66,36 @@ The flow is **interprocedural across two files** — precisely the case a same-m
 analyzer (e.g. SonarQube Community) does not report. (The repo's original 2014 build
 was replaced with a modern Spring Boot 3 / JDK 17 `pom.xml`; the vulnerable source is
 unchanged.)
+
+## vulnerable-spring-boot-application (recall, Spring Boot 2 / javax)
+
+[`Contrast-Security-OSS/vulnerable-spring-boot-application`](https://github.com/Contrast-Security-OSS/vulnerable-spring-boot-application)
+— a vendor-maintained vulnerable app on **Spring Boot 2** (`javax.*`), with a SQL
+injection that also exercises two patterns the synthetic benchmark did not:
+
+```java
+// ProviderController.java — the request binds ALL params into a Map
+public String search(@RequestParam Map<String, String> body, Model model) {
+    providerSearchDAO.getProvidersInZipCode(body.get("zipCode"));   // value via Map.get
+}
+// ProviderSearchDAO.java
+String q = "select * from PROVIDERS where ... zip_code = '" + zipCode + "'";
+em.createNativeQuery(q);                                            // javax.persistence
+```
+
+Result — **detected**:
+
+```
+[CRITICAL] sql-injection (confidence: 99%)
+  Source:  ProviderController.java:32 - search() - tainted parameter
+  Sink:    ProviderSearchDAO.java:18 - createNativeQuery()
+```
+
+This run surfaced (and then drove fixes for) two real-world gaps: the sink is
+`javax.persistence` (Spring Boot 2 / Java EE, still widely deployed), and the value
+is read from a `@RequestParam Map` via `Map.get`. Support for `javax.*` library
+signatures and a `Map.get` taint transfer were added so the flow is caught. (Built
+with a Spring Boot 2.7 / JDK 17 `pom.xml`; the vulnerable source is unchanged.)
 
 ### Reproduce
 

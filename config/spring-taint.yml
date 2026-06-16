@@ -46,10 +46,13 @@ spring-sources:
 
 # Concrete-call sources (the returned value is tainted)
 sources:
-  # Servlet API
+  # Servlet API (jakarta = Spring Boot 3+, javax = Spring Boot 2 / Java EE)
   - { kind: call, method: "<jakarta.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>", index: result }
   - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>", index: result }
   - { kind: call, method: "<jakarta.servlet.http.HttpServletRequest: java.lang.String getQueryString()>", index: result }
+  - { kind: call, method: "<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>", index: result }
+  - { kind: call, method: "<javax.servlet.http.HttpServletRequest: java.lang.String getHeader(java.lang.String)>", index: result }
+  - { kind: call, method: "<javax.servlet.http.HttpServletRequest: java.lang.String getQueryString()>", index: result }
 
   # File upload — every field of an uploaded part is controlled by the client. The
   # original filename is a classic path-traversal / reflected-XSS vector.
@@ -76,6 +79,7 @@ sinks:
   - { vuln: sql-injection, method: "<java.sql.Statement: boolean execute(java.lang.String)>", index: 0 }
   - { vuln: sql-injection, method: "<java.sql.Statement: java.sql.ResultSet executeQuery(java.lang.String)>", index: 0 }
   - { vuln: sql-injection, method: "<jakarta.persistence.EntityManager: jakarta.persistence.Query createNativeQuery(java.lang.String)>", index: 0 }
+  - { vuln: sql-injection, method: "<javax.persistence.EntityManager: javax.persistence.Query createNativeQuery(java.lang.String)>", index: 0 }
   # R2DBC / WebFlux reactive SQL
   - { vuln: sql-injection, method: "<org.springframework.r2dbc.core.DatabaseClient: org.springframework.r2dbc.core.DatabaseClient$GenericExecuteSpec sql(java.lang.String)>", index: 0 }
 
@@ -98,6 +102,7 @@ sinks:
 
   # --- Open Redirect (CWE-601) ---
   - { vuln: open-redirect, method: "<jakarta.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>", index: 0 }
+  - { vuln: open-redirect, method: "<javax.servlet.http.HttpServletResponse: void sendRedirect(java.lang.String)>", index: 0 }
 
   # --- SpEL Injection (CWE-917) ---
   - { vuln: spel-injection, method: "<org.springframework.expression.ExpressionParser: org.springframework.expression.Expression parseExpression(java.lang.String)>", index: 0 }
@@ -132,6 +137,7 @@ sinks:
 
   # --- JPA / JPQL Injection (CWE-89) — JPA does not make string-built queries safe ---
   - { vuln: jpql-injection, method: "<jakarta.persistence.EntityManager: jakarta.persistence.Query createQuery(java.lang.String)>", index: 0 }
+  - { vuln: jpql-injection, method: "<javax.persistence.EntityManager: javax.persistence.Query createQuery(java.lang.String)>", index: 0 }
   # (EntityManager.createNativeQuery is listed under SQL injection above.)
 
   # --- Open Redirect via Spring MVC view name (CWE-601) — "redirect:" + user input ---
@@ -178,3 +184,8 @@ transfers:
 
   # Stream collectors that concatenate elements into one string
   - { method: "<java.util.stream.Collectors: java.util.stream.Collector joining(java.lang.CharSequence)>", from: 0, to: result }
+
+  # Map extraction: a tainted map (e.g. a @RequestParam Map<String,String>) yields
+  # tainted values. Typed String so the value survives the cast at the read site.
+  - { method: "<java.util.Map: java.lang.Object get(java.lang.Object)>", from: base, to: result, type: java.lang.String }
+  - { method: "<java.util.Map: java.lang.Object getOrDefault(java.lang.Object,java.lang.Object)>", from: base, to: result, type: java.lang.String }

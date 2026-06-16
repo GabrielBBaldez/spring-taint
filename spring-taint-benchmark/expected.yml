@@ -176,6 +176,15 @@ cases:
     sinkFile: sources/RequestHeaderXssController.java
     note: "source is @RequestHeader"
 
+  - id: map-param-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: sources/MapParamSqliController.java
+    sinkFile: sources/MapParamSqliController.java
+    note: "source is a @RequestParam Map; tainted value read via Map.get"
+
   # ---------------- Reactive (WebFlux / R2DBC) ----------------
   - id: webflux-sqli
     category: sql-injection
@@ -387,8 +396,8 @@ cases:
 
 # Totals (kept in sync by hand).
 summary:
-  total: 37
-  expectedVulnerable: 34
+  total: 38
+  expectedVulnerable: 35
   expectedSafe: 3
   categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
                xxe, path-traversal, command-injection, log-injection, template-injection,
@@ -398,7 +407,7 @@ summary:
             "MultipartFile.getOriginalFilename", "@FeignClient result", "@Scheduled entry point"]
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
-  detectedVulnerable: 33        # taint engine alone (the 30 + the 3 reachable near-misses)
-  detectedWithNearMiss: 34      # adding the near-miss layer (--src) catches the wrong-context case
+  detectedVulnerable: 34        # taint engine alone
+  detectedWithNearMiss: 35      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
   knownGaps: []

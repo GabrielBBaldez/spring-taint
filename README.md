@@ -184,13 +184,18 @@ Per-rule reference: [docs/rules.md](docs/rules.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
 
-Beyond the synthetic benchmark, the analyzer is run against real OSS apps. On the
-clean **spring-petclinic** (Spring Boot 4.0) it engaged correctly (9 entry points, 12
-sources) and reported **0 false positives** (plus one legitimate config finding the
-project itself flags as production-unsafe). On a vulnerable app
-(**sql-injection-web**) it found the real **cross-layer** SQL injection (controller →
-repository, two files) at 99% confidence and generated the correct fix. See
-[docs/validation.md](docs/validation.md).
+Beyond the synthetic benchmark, the analyzer is run against real OSS apps, across both
+Spring Boot 3 (`jakarta`) and Spring Boot 2 (`javax`):
+
+- **spring-petclinic** (clean, Boot 4.0) — engaged correctly (9 entry points, 12
+  sources) and reported **0 false positives**, plus one legitimate config finding the
+  project itself flags as production-unsafe.
+- **sql-injection-web** (vulnerable) — found the **cross-layer** SQL injection
+  (controller → repository, two files) at 99% confidence and generated the fix.
+- **Contrast vulnerable-spring-boot-application** (vulnerable, Boot 2 / `javax`, value
+  via a `@RequestParam Map`) — found the cross-layer SQL injection at 99%.
+
+See [docs/validation.md](docs/validation.md).
 
 ---
 

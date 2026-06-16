@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.15.0] - 2026-06-16
+
+### Added
+- **Spring Boot 2 / Java EE (`javax.*`) support** — `javax.persistence` `createQuery`
+  / `createNativeQuery` and `javax.servlet` `sendRedirect` / `getParameter` /
+  `getHeader` / `getQueryString`, alongside the `jakarta.*` signatures, so the
+  analyzer works on Boot 2 apps (still widely deployed), not only Boot 3.
+- **Map-typed sources** — a `Map.get` / `getOrDefault` taint transfer, so a tainted
+  `@RequestParam Map<String,String>` propagates to values read out of it (a common
+  real-world binding). Benchmark gains a Map case (now 35 vulnerable, 34 by the taint
+  engine alone; 0 false positives).
+
+### Validated
+- These two additions were driven by, and verified against, a real vendor app:
+  `Contrast-Security-OSS/vulnerable-spring-boot-application` (Spring Boot 2, `javax`,
+  `@RequestParam Map`). The analyzer now finds its cross-layer SQL injection. See
+  [docs/validation.md](docs/validation.md).
+
 ## [0.14.0] - 2026-06-16
 
 ### Added
@@ -208,6 +226,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.15.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.15.0
 [0.14.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.14.0
 [0.13.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.13.0
 [0.12.1]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.1
