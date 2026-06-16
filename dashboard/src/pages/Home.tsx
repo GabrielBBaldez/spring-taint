@@ -18,6 +18,9 @@ const ACTION = `- uses: GabrielBBaldez/spring-taint@v0.17.1
 const CLI = `java -jar spring-taint-all.jar scan target/classes \\
   --libs "$(cat cp.txt)" --src src/main/java --suggest-fixes`;
 
+const FIX_BEFORE = `jdbc.update("DELETE FROM accounts WHERE owner = '" + owner + "'");`;
+const FIX_AFTER = `jdbc.update("DELETE FROM accounts WHERE owner = ?", owner);`;
+
 const FEATURES: { title: string; body: string }[] = [
   {
     title: "Cross-layer by design",
@@ -87,6 +90,28 @@ export function Home() {
         <pre className="code">
           <code>{PROBLEM}</code>
         </pre>
+      </section>
+
+      <section className="wrap autofix-band">
+        <div className="ab-text">
+          <span className="kicker">it doesn't just find — it fixes</span>
+          <h2>Autofix generates the patch</h2>
+          <p>
+            For SQL injection and XSS, spring-taint rewrites the vulnerable line into a
+            parameterized query or an escaped value. The dashboard shows the diff per finding,
+            ready to copy — or apply the safe ones with <code>--fix</code>.
+          </p>
+        </div>
+        <div className="ab-diff">
+          <div className="ab-line del">
+            <span className="ab-sign">-</span>
+            <code>{FIX_BEFORE}</code>
+          </div>
+          <div className="ab-line add">
+            <span className="ab-sign">+</span>
+            <code>{FIX_AFTER}</code>
+          </div>
+        </div>
       </section>
 
       <section className="wrap feature-grid">

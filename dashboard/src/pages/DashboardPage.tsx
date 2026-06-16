@@ -5,6 +5,7 @@ import { Stats } from "../components/Stats";
 import { SeverityDonut } from "../components/SeverityDonut";
 import { RuleBars } from "../components/RuleBars";
 import { Findings } from "../components/Findings";
+import { SuggestedFixes } from "../components/SuggestedFixes";
 
 export function DashboardPage() {
   const [report, setReport] = useState<ParsedReport | null>(null);
@@ -104,6 +105,8 @@ export function DashboardPage() {
 
       <Headline total={total} files={stats.files} sevCount={stats.sevCount} />
       <Stats total={total} sevCount={stats.sevCount} files={stats.files} rules={stats.rules} />
+
+      <SuggestedFixes findings={report?.findings ?? []} />
 
       <section className="panels">
         <SeverityDonut sevCount={stats.sevCount} total={total} />

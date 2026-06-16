@@ -373,4 +373,41 @@ body::before {
   .hero-title { font-size: 38px; }
 }
 
+/* ============================================================
+   autofix — front and centre
+   ============================================================ */
+.af-badge { margin-left: 8px; font-family: var(--mono); font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); background: var(--venom); border-radius: 4px; padding: 1px 6px; vertical-align: middle; }
+
+.fixes-panel { margin: 26px 0 30px; border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(180deg, rgba(94, 242, 160, .05), transparent 55%), var(--panel); overflow: hidden; }
+.fixes-head { display: flex; align-items: baseline; gap: 12px; padding: 15px 18px 12px; border-bottom: 1px solid var(--line); }
+.fixes-head h2 { font-size: 15px; font-family: var(--mono); color: var(--text); display: flex; align-items: center; gap: 9px; }
+.fixes-head .count { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--ink); background: var(--venom); border-radius: 999px; padding: 1px 9px; }
+.fixes-sub { font-size: 12px; color: var(--muted); }
+.fixes-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; max-height: 540px; overflow-y: auto; }
+.fixcard { background: var(--ink-2); border: 1px solid var(--line); border-left: 3px solid var(--c); border-radius: 9px; overflow: hidden; }
+.fixcard-head { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.fixcard-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
+.fixcard-rule { font-family: var(--mono); font-weight: 600; font-size: 12.5px; color: var(--text); }
+.fixcard-loc { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy-btn { margin-left: auto; flex: none; font-family: var(--mono); font-size: 11px; color: var(--venom); background: transparent; border: 1px solid var(--line-2); border-radius: 6px; padding: 3px 10px; cursor: pointer; transition: all .15s; }
+.copy-btn:hover { border-color: var(--venom); background: rgba(94, 242, 160, .08); }
+.fixcard-desc { font-size: 12px; color: var(--text-dim); padding: 9px 12px 0; }
+.fixcard .fix-diff { padding: 8px 12px 11px; }
+
+.autofix-band { display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; align-items: center; margin-top: 54px; }
+.ab-text h2 { font-size: 22px; margin: 10px 0; letter-spacing: -.3px; }
+.ab-text p { color: var(--text-dim); font-size: 14px; }
+.ab-diff { font-family: var(--mono); font-size: 12.5px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--panel); }
+.ab-line { display: flex; gap: 10px; padding: 12px 14px; white-space: pre; overflow-x: auto; }
+.ab-line.del { background: rgba(255, 84, 104, .07); color: #ff9aa6; }
+.ab-line.add { background: rgba(87, 224, 138, .08); color: #7fe6a6; border-top: 1px solid var(--line); }
+.ab-sign { font-weight: 700; flex: none; }
+.ab-line.del .ab-sign { color: var(--critical); }
+.ab-line.add .ab-sign { color: var(--venom); }
+
+@media (max-width: 860px) {
+  .fixes-list { grid-template-columns: 1fr; }
+  .autofix-band { grid-template-columns: 1fr; }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

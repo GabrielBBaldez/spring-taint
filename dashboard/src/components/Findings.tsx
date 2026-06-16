@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { SEV_COLOR, type Finding, type Severity } from "../lib/sarif";
+import { FixDiff } from "./FixDiff";
 
 export function Findings({
   findings,
@@ -79,6 +80,7 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
           <div className="f-rule">
             {finding.ruleId}
             {finding.confidence != null && <span className="conf">{finding.confidence}%</span>}
+            {finding.fix && <span className="af-badge">autofix</span>}
           </div>
           <div className="f-msg">{finding.message}</div>
         </div>
@@ -105,23 +107,13 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
 }
 
 function SuggestedFix({ fix }: { fix: { description: string; diff: string } }) {
-  const lines = fix.diff.replace(/\n+$/, "").split("\n");
   return (
     <div className="fix">
       <div className="fix-head">
         <span className="fix-tag">suggested fix</span>
         {fix.description}
       </div>
-      <pre className="fix-diff">
-        {lines.map((l, i) => {
-          const kind = l.startsWith("  + ") ? "add" : l.startsWith("  - ") ? "del" : "ctx";
-          return (
-            <div key={i} className={`dl ${kind}`}>
-              {l.replace(/^ {2}/, "")}
-            </div>
-          );
-        })}
-      </pre>
+      <FixDiff diff={fix.diff} />
     </div>
   );
 }
