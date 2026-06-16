@@ -47,6 +47,20 @@ public final class TaintFlowExtractor {
     /** Safety bound on call-graph traversal when reconstructing a trace. */
     private static final int MAX_BFS_METHODS = 20_000;
 
+    /** Package prefixes whose classes are framework/JDK internals, not the analyzed app. */
+    private static final List<String> FRAMEWORK_PREFIXES = List.of(
+            "java.", "javax.", "jakarta.", "jdk.", "sun.", "com.sun.",
+            "org.springframework.", "kotlin.");
+
+    private static boolean isFrameworkClass(String fqn) {
+        for (String prefix : FRAMEWORK_PREFIXES) {
+            if (fqn.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private TaintFlowExtractor() {
     }
 
@@ -72,6 +86,13 @@ public final class TaintFlowExtractor {
             JMethod sourceMethod = sourcePoint.getContainer();
             Invoke sinkCall = sinkPoint.sinkCall();
             JMethod sinkContainer = sinkCall.getContainer();
+            // Report the sink call the developer wrote, not the same flow re-reported
+            // deep inside a framework (e.g. JdbcTemplate calling java.sql.Statement.
+            // executeQuery), which would be a duplicate. The application's own code is
+            // never in these framework packages.
+            if (isFrameworkClass(sinkContainer.getDeclaringClass().getName())) {
+                continue;
+            }
             JMethod sinkMethod = sinkPoint.sink().method();
 
             List<Hop> trace = new ArrayList<>();

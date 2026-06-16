@@ -144,11 +144,9 @@ cases:
     severity: medium
     expected: true
     crossLayer: false
-    knownGap: true
-    gap: "sink (sendRedirect) is called on an interface-typed parameter (HttpServletResponse), which has no points-to object under the current entry-point modelling"
     sourceFile: openredirect/OpenRedirectController.java
     sinkFile: openredirect/OpenRedirectController.java
-    note: "user-controlled redirect target"
+    note: "user-controlled redirect target; detected via call-site sink matching"
 
 # Totals (kept in sync by hand).
 summary:
@@ -157,6 +155,6 @@ summary:
   expectedSafe: 3
   categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
   # Current engine results on this benchmark:
-  detectedVulnerable: 10   # all but open-redirect (knownGap)
+  detectedVulnerable: 11   # all vulnerable cases
   falsePositives: 0
-  knownGaps: [open-redirect]
+  knownGaps: []

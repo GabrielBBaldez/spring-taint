@@ -135,10 +135,9 @@ The benchmark has **14 cases (11 vulnerable, 3 safe)** across SQL injection
 XSS, SSRF, SpEL injection, path traversal, command injection, and open redirect,
 with documented ground truth in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **10/11 vulnerable cases detected, 0 false positives** on
-the 3 safe cases. The one miss (`open-redirect`) is a documented gap — its sink is
-called on an interface-typed parameter that has no points-to object yet. Full
-table and per-case status: [benchmark README](spring-taint-benchmark/README.md).
+Current engine result: **11/11 vulnerable cases detected, 0 false positives** on
+the 3 safe cases. Full table and per-case status:
+[benchmark README](spring-taint-benchmark/README.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
 
@@ -234,7 +233,7 @@ spring-taint scan <classes> --libs <dependency-classpath> --config config/spring
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **10/11 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection; open redirect is a documented gap
+- [x] precision/recall on the current benchmark — **11/11 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection, open redirect
 - [ ] GitHub Action
 - [ ] Public release v0.1.0
 

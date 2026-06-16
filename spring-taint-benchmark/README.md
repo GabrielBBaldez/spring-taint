@@ -32,12 +32,12 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `spel-injection` | SpEL injection (CWE-917) | no | vulnerable | ✅ |
 | `path-traversal-direct` | Path traversal (CWE-22) | no | vulnerable | ✅ |
 | `cmdi-direct` | Command injection (CWE-78) | no | vulnerable | ✅ |
-| `open-redirect` | Open redirect (CWE-601) | no | vulnerable | ⚠️ known gap |
+| `open-redirect` | Open redirect (CWE-601) | no | vulnerable | ✅ |
 
-**11 vulnerable, 3 safe.** Current engine result: **10/11 detected, 0 false positives.**
-The single miss (`open-redirect`) is a documented gap: the sink (`sendRedirect`) is
-called on an interface-typed parameter (`HttpServletResponse`), which has no
-points-to object under the current entry-point modelling.
+**11 vulnerable, 3 safe.** Current engine result: **11/11 detected, 0 false positives.**
+Open redirect — whose sink (`sendRedirect`) is called on an interface-typed
+parameter with no concrete implementation — is detected via call-site sink
+matching (Tai-e `call-site-mode`).
 
 ## Layout
 
@@ -56,7 +56,7 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── ssrf/
 │   └── resttemplate/    # user URL → RestTemplate.getForObject
 ├── spel/                # user expression → ExpressionParser.parseExpression
-├── openredirect/        # user URL → response.sendRedirect (known gap)
+├── openredirect/        # user URL → response.sendRedirect
 ├── pathtraversal/
 │   └── direct/          # filename → new File(...)
 └── cmdi/

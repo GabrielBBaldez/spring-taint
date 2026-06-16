@@ -50,4 +50,17 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
         log.info("Spring layer: generated {} param source(s)", sources.size());
         return sources;
     }
+
+    /**
+     * Enables call-site sink matching. By default Tai-e finds sinks via call-graph
+     * edges into the sink method, which misses sinks declared on interface library
+     * types with no concrete implementation on the classpath (e.g.
+     * {@code HttpServletResponse.sendRedirect}). Call-site mode also matches by the
+     * call site's resolved method reference, and still only reports when the
+     * argument is actually tainted — so it adds recall without losing precision.
+     */
+    @Override
+    protected boolean callSiteMode() {
+        return true;
+    }
 }
