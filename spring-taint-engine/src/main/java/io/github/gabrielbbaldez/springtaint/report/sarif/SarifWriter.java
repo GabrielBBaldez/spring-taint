@@ -22,7 +22,7 @@ public final class SarifWriter {
 
     private static final String SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
     private static final String TOOL_NAME = "Spring Taint Analyzer";
-    private static final String TOOL_VERSION = "0.10.0";
+    private static final String TOOL_VERSION = "0.11.0";
     private static final String TOOL_URI = "https://github.com/GabrielBBaldez/spring-taint";
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -93,8 +93,14 @@ public final class SarifWriter {
                 locs.addObject().set("location", location(step));
             }
         }
-        if (f.confidence() != null) {
-            result.putObject("properties").put("confidence", f.confidence());
+        if (f.confidence() != null || f.nearMiss() != null) {
+            ObjectNode props = result.putObject("properties");
+            if (f.confidence() != null) {
+                props.put("confidence", f.confidence());
+            }
+            if (f.nearMiss() != null) {
+                props.put("nearMiss", f.nearMiss());
+            }
         }
         return result;
     }

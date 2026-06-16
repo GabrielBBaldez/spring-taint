@@ -1,6 +1,7 @@
 package io.github.gabrielbbaldez.springtaint.report;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,10 +24,16 @@ public final class ConsoleReporter {
         }
         for (Finding f : findings) {
             String route = f.route() == null ? "" : " @ " + f.route();
-            String confidence = f.confidence() == null ? ""
-                    : String.format(" (confidence: %d%%%s)",
-                            f.confidence(), f.confidence() < 50 ? " - review manually" : "");
-            out.printf("[%s] %s%s%s%n", f.severity(), f.ruleId(), route, confidence);
+            List<String> tags = new ArrayList<>();
+            if (f.nearMiss() != null) {
+                tags.add("near-miss sanitizer");
+            }
+            if (f.confidence() != null) {
+                tags.add("confidence: " + f.confidence() + "%"
+                        + (f.confidence() < 50 ? " - review manually" : ""));
+            }
+            String suffix = tags.isEmpty() ? "" : " (" + String.join(", ", tags) + ")";
+            out.printf("[%s] %s%s%s%n", f.severity(), f.ruleId(), route, suffix);
 
             if (f.flow().size() <= 1) {
                 // single-location finding (e.g. a hardcoded secret) — not a taint flow
@@ -47,6 +54,9 @@ public final class ConsoleReporter {
                     out.printf("  Sink:    %s:%d - %s%n", sink.file(), sink.line(), sink.description());
                 }
                 out.println("  Sanitizer: none detected");
+            }
+            if (f.nearMiss() != null) {
+                out.printf("  Near-miss: %s%n", f.nearMiss());
             }
             out.println();
         }

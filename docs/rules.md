@@ -208,6 +208,27 @@ pass them with `--config` (merged onto the defaults; `--no-default-config` to
 replace). Sinks declared on interface library types (no concrete implementation on
 the classpath) are matched via Tai-e `call-site-mode`.
 
+## Near-miss sanitizers
+
+The most dangerous flows are not the unsanitized ones — they are the ones the
+developer *believes* are sanitized but are not. With `--src`, findings are annotated
+when the path passes an attempted-but-incorrect sanitization:
+
+- **Insufficient** — character filtering (`replace`/`replaceAll`) before a SQL sink
+  does not prevent injection (backslash escaping, encodings, SQL functions).
+- **Blacklist** — removing a tag literal (`replace("<script>", "")`) before an HTML
+  sink is trivially bypassed (`<scr<script>ipt>`); use contextual escaping.
+- **Discarded result** — a sanitizer is called but its return value is thrown away
+  while the original value reaches the sink (`htmlEscape(x); … write(x)`).
+- **Wrong context** — a sanitizer used where it does not apply, e.g. `htmlEscape`
+  (an XSS sanitizer) before a redirect. The taint engine alone treats this as
+  sanitized, so the near-miss layer reports it (a flow other tools miss entirely).
+
+The note appears in the console (`(near-miss sanitizer)`) and in SARIF
+(`result.properties.nearMiss`). Because the first three are real flows the engine
+already reports, the annotation is advisory and never adds a false positive; the
+wrong-context case is the one new detection the layer contributes.
+
 ## Confidence scores and diff mode
 
 Each taint finding carries a **confidence** (0-100), derived from the call path:

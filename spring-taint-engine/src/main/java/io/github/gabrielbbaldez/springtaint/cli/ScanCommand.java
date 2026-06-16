@@ -89,7 +89,11 @@ public final class ScanCommand implements Callable<Integer> {
             findings = filterToDiff(findings, diffRef);
         }
         if (src != null) {
+            findings = new io.github.gabrielbbaldez.springtaint.nearmiss.NearMissAnnotator()
+                    .annotate(findings, src);
             findings = applySuppressions(findings, src);
+            findings.sort(java.util.Comparator
+                    .comparing(Finding::ruleId).thenComparing(Finding::file).thenComparingInt(Finding::line));
         }
 
         new ConsoleReporter(System.out, verbose).report(findings);

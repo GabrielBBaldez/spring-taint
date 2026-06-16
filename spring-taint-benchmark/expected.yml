@@ -339,10 +339,56 @@ cases:
     sinkFile: transactional/TransactionalController.java
     note: "write-then-read inside one @Transactional method; the read-back is a source"
 
+  # ---------------- Near-miss sanitizers (attempted but incorrect sanitization) ----------------
+  # A/B/C reach the sink anyway (the bad sanitizer does not clear taint), so the taint
+  # engine detects them; with --src they are annotated with the reason. D is a false
+  # negative for the taint engine alone (htmlEscape clears the taint) and is caught by
+  # the near-miss layer with --src.
+  - id: nearmiss-sql-replace
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    nearMiss: true
+    sourceFile: nearmiss/NearMissSqlController.java
+    sinkFile: nearmiss/NearMissSqlController.java
+    note: "replaceAll(\"'\") does not prevent SQL injection"
+
+  - id: nearmiss-xss-blacklist
+    category: xss
+    severity: high
+    expected: true
+    crossLayer: false
+    nearMiss: true
+    sourceFile: nearmiss/NearMissXssController.java
+    sinkFile: nearmiss/NearMissXssController.java
+    note: "blacklisting <script> is bypassable"
+
+  - id: nearmiss-discarded-sanitizer
+    category: xss
+    severity: high
+    expected: true
+    crossLayer: false
+    nearMiss: true
+    sourceFile: nearmiss/NearMissDiscardedController.java
+    sinkFile: nearmiss/NearMissDiscardedController.java
+    note: "htmlEscape result discarded; original value is written"
+
+  - id: nearmiss-wrong-context
+    category: open-redirect
+    severity: medium
+    expected: true
+    crossLayer: false
+    nearMiss: true
+    requiresSrc: true
+    sourceFile: nearmiss/NearMissWrongContextController.java
+    sinkFile: nearmiss/NearMissWrongContextController.java
+    note: "htmlEscape before sendRedirect; detected by the near-miss layer with --src"
+
 # Totals (kept in sync by hand).
 summary:
-  total: 33
-  expectedVulnerable: 30
+  total: 37
+  expectedVulnerable: 34
   expectedSafe: 3
   categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
                xxe, path-traversal, command-injection, log-injection, template-injection,
@@ -352,6 +398,7 @@ summary:
             "MultipartFile.getOriginalFilename", "@FeignClient result", "@Scheduled entry point"]
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
-  detectedVulnerable: 30   # all vulnerable cases
+  detectedVulnerable: 33        # taint engine alone (the 30 + the 3 reachable near-misses)
+  detectedWithNearMiss: 34      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
   knownGaps: []

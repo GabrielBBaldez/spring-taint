@@ -52,8 +52,15 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `feign-client-sqli` | SQL injection (CWE-89) | cross-service — `@FeignClient` result | vulnerable | ✅ |
 | `scheduled-job-sqli` | SQL injection (CWE-89) | `@Scheduled` entry → `@Repository` read | vulnerable | ✅ |
 | `transactional-stored-sqli` | SQL injection (CWE-89) | `@Transactional` write-then-read | vulnerable | ✅ |
+| `nearmiss-sql-replace` | SQL injection (CWE-89) | near-miss — `replaceAll("'")` is not a sanitizer | vulnerable | ✅ |
+| `nearmiss-xss-blacklist` | XSS (CWE-79) | near-miss — blacklisting `<script>` is bypassable | vulnerable | ✅ |
+| `nearmiss-discarded-sanitizer` | XSS (CWE-79) | near-miss — `htmlEscape` result discarded | vulnerable | ✅ |
+| `nearmiss-wrong-context` | Open redirect (CWE-601) | near-miss — `htmlEscape` before `sendRedirect` | vulnerable | ✅ with `--src` |
 
-**30 vulnerable, 3 safe.** Current engine result: **30/30 detected, 0 false positives.**
+**34 vulnerable, 3 safe.** Current engine result: **33/33 detected by the taint engine
+(0 false positives); with the near-miss layer (`--src`) the wrong-context case makes it 34.**
+The first three near-miss cases reach the sink anyway (the bad sanitizer does not clear
+taint), so they are detected by default and annotated with the reason under `--src`.
 Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
 `@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, JAX-RS
 (`@QueryParam`), `@Repository` reads (stored / second-order injection), `@FeignClient`
@@ -96,6 +103,7 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── feign/               # @FeignClient result (downstream service) → SQL
 ├── scheduled/           # @Scheduled job → @Repository read → SQL
 ├── transactional/       # @Transactional write-then-read → SQL
+├── nearmiss/            # attempted-but-wrong sanitization (replace, discarded, wrong context)
 ├── jndi/                # user name → InitialContext.lookup
 ├── xxe/                 # user URI → DocumentBuilder.parse
 ├── loginjection/        # user input → Logger.info(String)
