@@ -25,6 +25,19 @@ spring-sources:
   - annotation: org.springframework.web.bind.annotation.CookieValue
   - annotation: org.springframework.web.bind.annotation.ModelAttribute
 
+  # JAX-RS / Quarkus / Jakarta REST
+  - annotation: jakarta.ws.rs.QueryParam
+  - annotation: jakarta.ws.rs.PathParam
+  - annotation: jakarta.ws.rs.HeaderParam
+  - annotation: jakarta.ws.rs.FormParam
+  - annotation: jakarta.ws.rs.CookieParam
+
+  # Micronaut
+  - annotation: io.micronaut.http.annotation.QueryValue
+  - annotation: io.micronaut.http.annotation.PathVariable
+  - annotation: io.micronaut.http.annotation.Body
+  - annotation: io.micronaut.http.annotation.Header
+
   # Messaging inputs (Phase 2 - differential vs. existing OSS tools)
   - annotation: org.springframework.kafka.annotation.KafkaListener
     note: "payload parameter (and ConsumerRecord key/value) is tainted"

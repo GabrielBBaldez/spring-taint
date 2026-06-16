@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.gabrielbbaldez</groupId>
         <artifactId>spring-taint-parent</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.0</version>
     </parent>
 
     <artifactId>spring-taint-benchmark</artifactId>
@@ -57,6 +57,14 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
+        </dependency>
+
+        <!-- JAX-RS annotations for the multi-framework (Quarkus / Jakarta REST) case. -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

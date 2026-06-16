@@ -186,14 +186,25 @@ cases:
     sinkFile: webflux/WebFluxSqliController.java
     note: "reactive R2DBC DatabaseClient.sql sink (interface), matched via call-site mode"
 
+  # ---------------- Multi-framework (JAX-RS / Quarkus) ----------------
+  - id: jaxrs-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: jaxrs/JaxRsSqliController.java
+    sinkFile: jaxrs/JaxRsSqliController.java
+    note: "source is JAX-RS @QueryParam (Quarkus / Jakarta REST)"
+
 # Totals (kept in sync by hand).
 summary:
-  total: 18
-  expectedVulnerable: 15
+  total: 19
+  expectedVulnerable: 16
   expectedSafe: 3
   categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
-  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener]
+  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener, "JAX-RS QueryParam"]
+  frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut]
   # Current engine results on this benchmark:
-  detectedVulnerable: 15   # all vulnerable cases
+  detectedVulnerable: 16   # all vulnerable cases
   falsePositives: 0
   knownGaps: []

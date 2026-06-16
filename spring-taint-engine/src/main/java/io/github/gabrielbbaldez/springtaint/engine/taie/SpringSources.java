@@ -16,12 +16,24 @@ final class SpringSources {
 
     /** Annotations carried by the parameter itself; that parameter is tainted. */
     static final Set<String> PARAM_ANNOTATIONS = Set.of(
+            // Spring MVC / WebFlux
             "org.springframework.web.bind.annotation.RequestParam",
             "org.springframework.web.bind.annotation.PathVariable",
             "org.springframework.web.bind.annotation.RequestBody",
             "org.springframework.web.bind.annotation.RequestHeader",
             "org.springframework.web.bind.annotation.CookieValue",
-            "org.springframework.web.bind.annotation.ModelAttribute");
+            "org.springframework.web.bind.annotation.ModelAttribute",
+            // JAX-RS (Quarkus, Jakarta REST)
+            "jakarta.ws.rs.QueryParam",
+            "jakarta.ws.rs.PathParam",
+            "jakarta.ws.rs.HeaderParam",
+            "jakarta.ws.rs.FormParam",
+            "jakarta.ws.rs.CookieParam",
+            // Micronaut
+            "io.micronaut.http.annotation.QueryValue",
+            "io.micronaut.http.annotation.PathVariable",
+            "io.micronaut.http.annotation.Body",
+            "io.micronaut.http.annotation.Header");
 
     /** Annotations carried by the method; all of its parameters are external input. */
     static final Set<String> METHOD_ANNOTATIONS = Set.of(
