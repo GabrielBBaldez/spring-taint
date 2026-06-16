@@ -30,16 +30,16 @@ public final class ConsoleReporter {
             FlowStep source = f.source();
             FlowStep sink = f.sink();
             if (source != null) {
-                out.printf("  Source:  %s:%d — %s%n", source.file(), source.line(), source.description());
+                out.printf("  Source:  %s:%d - %s%n", source.file(), source.line(), source.description());
             }
             if (verbose && f.flow().size() > 2) {
                 out.println("  Flow:");
                 for (FlowStep step : f.flow()) {
-                    out.printf("    → %s:%d — %s%n", step.file(), step.line(), step.description());
+                    out.printf("    -> %s:%d - %s%n", step.file(), step.line(), step.description());
                 }
             }
             if (sink != null) {
-                out.printf("  Sink:    %s:%d — %s%n", sink.file(), sink.line(), sink.description());
+                out.printf("  Sink:    %s:%d - %s%n", sink.file(), sink.line(), sink.description());
             }
             out.println("  Sanitizer: none detected");
             out.println();

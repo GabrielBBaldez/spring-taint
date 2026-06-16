@@ -43,6 +43,11 @@ public final class ScanCommand implements Callable<Integer> {
             description = "Write a SARIF 2.1 report to this file.")
     private Path output;
 
+    @Option(names = {"-l", "--libs"}, paramLabel = "CLASSPATH",
+            description = "Dependencies needed to resolve the target "
+                    + "(e.g. Spring jars), path-separator-joined.")
+    private String libs;
+
     @Option(names = "--severity", split = ",", paramLabel = "LEVEL",
             description = "Only report these severities: critical, high, medium, low.")
     private List<String> severities = new ArrayList<>();
@@ -62,7 +67,7 @@ public final class ScanCommand implements Callable<Integer> {
         }
 
         TaintConfig taintConfig = TaintConfigLoader.load(config);
-        AnalysisRequest request = new AnalysisRequest(target, taintConfig, severities, verbose);
+        AnalysisRequest request = new AnalysisRequest(target, libs, taintConfig, severities, verbose);
 
         TaintEngine engine = new TaiETaintEngine();
         List<Finding> findings = filter(engine.analyze(request), severities);

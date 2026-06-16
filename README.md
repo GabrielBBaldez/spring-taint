@@ -212,6 +212,19 @@ mvn -q clean package          # build engine + benchmark
 mvn -q -pl spring-taint-benchmark package   # compile the benchmark cases only
 ```
 
+### Running a scan
+
+Pass the target's dependency classpath with `--libs` so types like `JdbcTemplate`
+resolve:
+
+```bash
+spring-taint scan <classes> --libs <dependency-classpath> --config config/spring-taint.yml
+```
+
+> **The analysis currently runs on JDK 17.** Tai-e 0.5.1's frontend cannot read
+> JDK 21 bytecode, so run the analyzer with a JDK 17 runtime (the project still
+> compiles to Java 17 on any JDK 17+).
+
 ---
 
 ## Status
@@ -221,10 +234,10 @@ mvn -q -pl spring-taint-benchmark package   # compile the benchmark cases only
 - [x] Gap mapping vs. competitors
 - [x] Project scaffold (Maven multi-module, CLI skeleton, config loader, SARIF model)
 - [x] Initial benchmark: SQL injection (direct / through-service / via-Kafka / safe), reflected XSS, path traversal, command injection
-- [ ] Engine: Tai-e IFDS wired end-to-end on the benchmark
-- [ ] Spring source layer: annotation → Tai-e param-source generation
-- [ ] precision/recall validation on the benchmark
-- [ ] Functional CLI with SARIF output
+- [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
+- [x] Spring source layer: annotation → Tai-e param-source generation
+- [x] Functional CLI with SARIF output
+- [ ] precision/recall validation — currently detects SQL injection (direct, cross-layer through-service, via-Kafka) and path traversal with **0 false positives**; reflected XSS and command injection pending (sink receiver comes from a library-returned object)
 - [ ] GitHub Action
 - [ ] Public release v0.1.0
 
