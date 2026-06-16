@@ -39,6 +39,18 @@ jobs:
           echo "Detected $count findings (expected 36)."
           test "$count" -eq 36
 
+      - name: Scan with --src (near-miss layer gate)
+        # With --src the near-miss layer runs; the wrong-context case is detected only
+        # this way, so this guards that path (37 = 36 + the near-miss-only finding).
+        run: |
+          java -Xmx4g -jar spring-taint-engine/target/spring-taint-all.jar scan \
+            spring-taint-benchmark/target/classes \
+            --libs "$(cat spring-taint-benchmark/bench-cp.txt)" \
+            --src spring-taint-benchmark/src/main/java | tee scan-src.out || true
+          count=$(grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\] ' scan-src.out)
+          echo "Detected $count findings with --src (expected 37)."
+          test "$count" -eq 37
+
       - name: Upload SARIF
         if: always()
         uses: actions/upload-artifact@v4
