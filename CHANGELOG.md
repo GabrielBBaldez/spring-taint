@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.17.0] - 2026-06-16
+
+### Added
+- **`@RabbitListener` as a messaging source** — a RabbitMQ message payload is external,
+  untrusted input, modeled the same way as `@KafkaListener`. Closes the RabbitMQ item on
+  the Phase 3 roadmap and adds a `sqli-via-rabbit` benchmark case (now 40 cases: 37
+  vulnerable, 36 by the taint engine alone, 0 false positives).
+- **Intentionally vulnerable demo app** ([`examples/demo-app`](examples/demo-app)) — a
+  standalone Spring Boot 3 app where each category (reflected XSS, command injection,
+  cross-layer SQL injection) ships a vulnerable endpoint and a safe sibling, so one scan
+  demonstrates both true positives and false-positive checks.
+
+### Documentation
+- README gains a **"Real CVEs of the classes it detects"** section mapping each detector
+  to public CVEs of the same bug class (Spring Cloud / Spring Data SQL injection, Spring
+  Data Commons SpEL injection, a RuoYi SQLi).
+- The design scope doc is brought up to date: the status checklist now reflects shipped
+  work, and the surface built beyond the original taint scope (pattern scanners, autofix,
+  near-miss, adoption features) is documented.
+
 ## [0.16.0] - 2026-06-16
 
 ### Added
@@ -241,6 +261,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.17.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.17.0
 [0.16.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.16.0
 [0.15.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.15.0
 [0.14.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.14.0

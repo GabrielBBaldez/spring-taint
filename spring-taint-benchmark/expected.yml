@@ -55,6 +55,16 @@ cases:
     sinkFile: sqli/viakafka/KafkaSqliListener.java
     note: "source is a @KafkaListener payload"
 
+  - id: sqli-via-rabbit
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: true
+    phase: 2
+    sourceFile: sqli/viarabbit/RabbitSqliListener.java
+    sinkFile: sqli/viarabbit/RabbitSqliListener.java
+    note: "source is a @RabbitListener payload (RabbitMQ / Spring AMQP)"
+
   - id: sqli-safe-parameterized
     category: sql-injection
     expected: false
@@ -405,18 +415,19 @@ cases:
 
 # Totals (kept in sync by hand).
 summary:
-  total: 39
-  expectedVulnerable: 36
+  total: 40
+  expectedVulnerable: 37
   expectedSafe: 3
   categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
                xxe, path-traversal, command-injection, log-injection, template-injection,
                open-redirect]
   sources: [RequestParam, PathVariable, RequestBody, RequestHeader, MatrixVariable, RequestPart,
-            KafkaListener, "JAX-RS QueryParam", "@Repository read (stored)",
+            KafkaListener, RabbitListener, "JAX-RS QueryParam", "@Repository read (stored)",
             "MultipartFile.getOriginalFilename", "@FeignClient result", "@Scheduled entry point"]
-  frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, JAX-RS/Quarkus, Micronaut, Spring Cloud OpenFeign]
+  frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, Spring AMQP/RabbitMQ,
+               JAX-RS/Quarkus, Micronaut, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
-  detectedVulnerable: 35        # taint engine alone
-  detectedWithNearMiss: 36      # adding the near-miss layer (--src) catches the wrong-context case
+  detectedVulnerable: 36        # taint engine alone
+  detectedWithNearMiss: 37      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
   knownGaps: []

@@ -18,6 +18,7 @@ Recognized entry points:
 |---|---|
 | Spring MVC / WebFlux | `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`, `@CookieValue`, `@ModelAttribute`, `@MatrixVariable`, `@RequestPart` |
 | Spring Kafka | `@KafkaListener` (payload) |
+| Spring AMQP / RabbitMQ | `@RabbitListener` (payload) |
 | JAX-RS / Quarkus | `@QueryParam`, `@PathParam`, `@HeaderParam`, `@FormParam`, `@CookieParam` |
 | Micronaut | `@QueryValue`, `@PathVariable`, `@Body`, `@Header` |
 | Servlet | `HttpServletRequest.getParameter/getHeader/getQueryString`, `ServletRequest/HttpSession.getAttribute` |

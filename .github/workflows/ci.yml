@@ -36,8 +36,8 @@ jobs:
             --libs "$(cat spring-taint-benchmark/bench-cp.txt)" \
             --output spring-taint.sarif | tee scan.out || true
           count=$(grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\] ' scan.out)
-          echo "Detected $count findings (expected 35)."
-          test "$count" -eq 35
+          echo "Detected $count findings (expected 36)."
+          test "$count" -eq 36
 
       - name: Upload SARIF
         if: always()

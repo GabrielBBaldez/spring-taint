@@ -35,6 +35,10 @@ Thumbs.db
 # Tai-e working files
 tai-e-output/
 
+# Generated dependency classpath (machine-specific absolute paths)
+bench-cp.txt
+**/bench-cp.txt
+
 # Secrets — never commit (this is a tool that flags these)
 *.env
 .env

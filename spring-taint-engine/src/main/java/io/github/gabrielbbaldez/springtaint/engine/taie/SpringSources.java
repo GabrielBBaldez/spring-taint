@@ -39,7 +39,8 @@ final class SpringSources {
 
     /** Annotations carried by the method; all of its parameters are external input. */
     static final Set<String> METHOD_ANNOTATIONS = Set.of(
-            "org.springframework.kafka.annotation.KafkaListener");
+            "org.springframework.kafka.annotation.KafkaListener",
+            "org.springframework.amqp.rabbit.annotation.RabbitListener");
 
     /**
      * Annotations that make a method an analysis entry point without tainting its

@@ -210,8 +210,9 @@ public void onMessage(String payload) {
 
 Será modelado via `param source` do Tai-e — exatamente o mecanismo projetado para entry points sem call site explícito.
 
-Cobertura planejada:
+Cobertura:
 - `@KafkaListener` com payload direto como `String`
+- `@RabbitListener` (RabbitMQ / Spring AMQP) com payload direto — mesmo modelo do Kafka
 - `ConsumerRecord<K, V>` — `key()` e `value()` como tainted
 - `@Header` em listener methods
 
@@ -296,14 +297,29 @@ public Mono<String> search(@RequestParam String query) {
 
 ---
 
-### Fase 3 — Roadmap (repositório separado)
+### Fase 3 — multi-framework
 
-| Framework | Sources | Sinks |
-|---|---|---|
-| Quarkus | `@QueryParam`, `@PathParam` (JAX-RS) | Panache ORM, `EntityManager` |
-| Micronaut | `@QueryValue`, `@Body` | JDBC, `HttpClient` |
-| gRPC | Campos de mensagem Protobuf | Qualquer sink Java existente |
-| RabbitMQ | `@RabbitListener` | Qualquer sink Java existente |
+| Framework | Sources | Sinks | Status |
+|---|---|---|---|
+| Quarkus / Jakarta REST | `@QueryParam`, `@PathParam` (JAX-RS) | Panache ORM, `EntityManager` | ✅ no repo principal |
+| Micronaut | `@QueryValue`, `@Body` | JDBC, `HttpClient` | ✅ no repo principal |
+| RabbitMQ | `@RabbitListener` | Qualquer sink Java existente | ✅ no repo principal |
+| gRPC | Campos de mensagem Protobuf | Qualquer sink Java existente | ⏳ roadmap |
+
+> Nota: Quarkus/Micronaut/RabbitMQ acabaram entrando no **repositório principal** (não num repo
+> separado, como esboçado abaixo na seção "Repositórios"); só gRPC continua pendente.
+
+---
+
+### Entregue além do escopo original (análises não-taint e adoção)
+
+O projeto cresceu além da análise de taint pura. Já no CLI:
+
+- **Scanners de padrão (não-taint, via ASM — leem qualquer JDK):** `secrets` (credenciais hardcoded), `misconfig` (CSRF disable, CORS permissivo, cookies inseguros, dados sensíveis em log) e `config` (auditoria de `application.yml`/`.properties`: segredos, SSL, exposição de actuator, console H2).
+- **Autofix:** gera o patch parametrizado para SQL injection (concat → `?` + binds) e envolve o valor em `HtmlUtils.htmlEscape` para XSS, preservando a formatação (JavaParser). `--suggest-fixes` por padrão; `--fix` aplica só os de alta confiança.
+- **Near-miss sanitizers:** detecta sanitização *tentada mas errada* — a classe mais perigosa, porque o dev acha que está seguro.
+- **Adoção:** score de confiança por finding, modo `--diff` (só código alterado), supressão, `validate-config`, `--baseline` (gate só nos achados novos) e um dashboard web (React) que lê SARIF.
+- **Modelagem de bean/DTO:** getters/setters como contêineres de taint (destrava fluxos que passam por um DTO/command bean), validada a 0 falsos positivos num app de ~126 classes.
 
 ---
 
@@ -413,7 +429,7 @@ spring-taint scan --verbose ./meu-projeto
 
 ```yaml
 - name: Spring Taint Analysis
-  uses: spring-taint/action@v1
+  uses: GabrielBBaldez/spring-taint@v0.17.0
   with:
     path: .
     severity: critical,high
@@ -449,6 +465,8 @@ Toda ferramenta de análise estática tem limitações. As deste projeto:
 - **Dados vindos de banco**: stored injection requer modelagem explícita da persistência como propagador
 - **Lambdas e method references complexos**: cobertura parcial via suporte do Tai-e
 - **Análise cross-service**: dados que atravessam fronteiras de microserviços via HTTP não são rastreados na Fase 1
+- **Bytecode JDK ≤17 para o taint**: o frontend do Tai-e não lê bytecode de JDK 21+, então a análise de taint roda num runtime JDK 17 (os scanners de padrão `secrets`/`misconfig`/`config` não têm esse limite). Apps mais novos podem precisar compilar com toolchain 17.
+- **Callbacks de framework**: taint que entra num callback fornecido pelo framework (ex.: o `Connection` passado a `doReturningWork` do Hibernate) ainda não é modelado.
 
 Essas limitações serão documentadas explicitamente em cada release, junto com os casos de teste que as exercitam.
 
@@ -466,18 +484,22 @@ Essas limitações serão documentadas explicitamente em cada release, junto com
 
 ## Status e Próximos Passos
 
-🚧 **Em desenvolvimento inicial**
+✅ **Fases 1, 2 e 3 entregues** — engine funcional, benchmark verde, releases públicos até v0.17.0.
 
 - [x] Definição de escopo e posicionamento
 - [x] Escolha de engine (Tai-e)
 - [x] Mapeamento de gaps vs. concorrentes
-- [ ] Benchmark inicial: projeto Spring vulnerável com casos documentados
-- [ ] Fase 1 MVP: SQL Injection via `@RequestParam` atravessando service/repository
-- [ ] Fase 1 MVP: XSS via `@ResponseBody`
-- [ ] Validação de precision/recall no benchmark
-- [ ] CLI funcional com output SARIF
-- [ ] Fase 2: `@KafkaListener` como source
-- [ ] Fase 2: Sanitizers condicionais
-- [ ] Fase 2: Stored injection cross-request
-- [ ] GitHub Action
-- [ ] Release público v0.1.0
+- [x] Benchmark inicial: projeto Spring vulnerável com casos documentados (40 casos: 37 vulneráveis, 3 safe)
+- [x] Fase 1 MVP: SQL Injection via `@RequestParam` atravessando service/repository
+- [x] Fase 1 MVP: XSS via response writer / `@ResponseBody`
+- [x] Validação de precision/recall no benchmark (36/37 só com o engine de taint, 0 falsos positivos; 37/37 com a camada near-miss)
+- [x] CLI funcional com output SARIF
+- [x] Fase 2: `@KafkaListener` **e `@RabbitListener`** como source
+- [x] Fase 2: Sanitizers condicionais
+- [x] Fase 2: Stored injection cross-request
+- [x] GitHub Action
+- [x] Release público v0.1.0 (e seguintes, até v0.17.0)
+- [x] Validação em apps OSS reais (spring-petclinic, petclinic-rest, sql-injection-web, Contrast) + app de exemplo próprio
+- [ ] gRPC / campos Protobuf como source (Fase 3, roadmap)
+- [ ] Plugin IntelliJ
+- [ ] Publicar imagem no GHCR / Maven Central (quando estável)

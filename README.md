@@ -166,20 +166,20 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **37 cases (34 vulnerable, 3 safe)** across SQL and JPQL injection
-(direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected,
+The benchmark has **40 cases (37 vulnerable, 3 safe)** across SQL and JPQL injection
+(direct, through-service, four-layer, via Kafka and RabbitMQ, reactive R2DBC), reflected,
 conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE,
 template injection (SSTI), log injection, path traversal, command injection, and
 open redirect — with sources from Spring (`@RequestParam`, `@PathVariable`,
 `@RequestBody`, `@RequestHeader`, `@MatrixVariable`, `MultipartFile`),
-`@KafkaListener`, JAX-RS (`@QueryParam`), `@Repository` reads, **`@FeignClient`
-results, `@Scheduled` jobs and `@Transactional` write-then-read**, plus taint
-flowing through `Optional` / `CompletableFuture` wrappers. Ground truth is
+`@KafkaListener`, `@RabbitListener`, JAX-RS (`@QueryParam`), `@Repository` reads,
+**`@FeignClient` results, `@Scheduled` jobs and `@Transactional` write-then-read**,
+plus taint flowing through `Optional` / `CompletableFuture` wrappers. Ground truth is
 in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **33/33 vulnerable cases detected, 0 false positives** on the
-3 safe cases; the near-miss layer (`--src`) catches one further wrong-context flow
-(34) and explains the rest. Full table: [benchmark README](spring-taint-benchmark/README.md).
+Current engine result: **36 of 37 vulnerable cases detected by the taint engine alone,
+0 false positives** on the 3 safe cases; the near-miss layer (`--src`) catches the
+remaining wrong-context flow (37) and explains the rest. Full table: [benchmark README](spring-taint-benchmark/README.md).
 Per-rule reference: [docs/rules.md](docs/rules.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
@@ -201,12 +201,34 @@ See [docs/validation.md](docs/validation.md).
 
 ---
 
+## Real CVEs of the classes it detects
+
+The benchmark proves recall on synthetic cases; these are **public CVEs of the same
+bug classes** in the wild. The analyzer reasons over application bytecode and reports
+the interprocedural source-to-sink form of each flow — so it catches these patterns
+when the vulnerable call lives in the analyzed code, not only inside a third-party
+library.
+
+| Class | Detector | Representative public CVE | The data flow |
+|---|---|---|---|
+| SQL injection (CWE-89) | `sql-injection` | [CVE-2020-5427 / CVE-2020-5428](https://spring.io/security/cve-2020-5428/) — Spring Cloud Data Flow / Task | a request-controlled `sort` column is concatenated into the task-execution query |
+| SQL injection (CWE-89) | `sql-injection` | [CVE-2016-6652](https://spring.io/security/cve-2016-6652/) — Spring Data JPA | a `Sort` value from the request reaches the generated SQL (blind SQLi) |
+| SQL injection (CWE-89) | `sql-injection` | [CVE-2024-54762](https://nvd.nist.gov/vuln/detail/CVE-2024-54762) — RuoYi (Spring Boot admin) | an authenticated request parameter reaches a query without sanitization |
+| SpEL injection (CWE-917) | `spel-injection` | [CVE-2018-1273](https://nvd.nist.gov/vuln/detail/CVE-2018-1273) — Spring Data Commons | a crafted request payload property path is evaluated as a SpEL expression |
+
+Each is a request value flowing across methods into a sink with no sanitizer in
+between — exactly the shape this tool tracks. (For a CVE whose vulnerable call sits in
+a framework rather than the app, the analyzer reports it only when that call is reached
+from the analyzed code.)
+
+---
+
 ## Scope by phases
 
 - **Phase 1 — Spring MVC (MVP):** SQL injection, XSS, path traversal, command injection, SSRF, SpEL injection, open redirect. Sources: `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`, `@CookieValue`, `@ModelAttribute`, servlet API. Exit criterion: detect every benchmark case with zero false negatives and precision > 80%.
-- **Phase 2 — gaps left open by existing OSS tools (done):** `@KafkaListener` as a source, conditional sanitizers, custom method sanitizers, cross-request stored injection, WebFlux / async (`Mono`/`Flux` as transparent taint wrappers).
+- **Phase 2 — gaps left open by existing OSS tools (done):** `@KafkaListener` and `@RabbitListener` as sources, conditional sanitizers, custom method sanitizers, cross-request stored injection, WebFlux / async (`Mono`/`Flux` as transparent taint wrappers).
 - **Phase 3 — multi-framework & robustness (done):** JAX-RS / Quarkus and Micronaut sources; JNDI / XXE / template / JPQL / log-injection sinks; `@FeignClient`, `@Scheduled` and `@Transactional` sources; configuration and misconfiguration audits.
-- **Phase 4 — roadmap:** gRPC and RabbitMQ sources, an IntelliJ plugin, and publishing the image to GHCR.
+- **Phase 4 — roadmap:** gRPC sources, an IntelliJ plugin, and publishing the image to GHCR.
 
 The full technical scope lives in [`docs/design/spring-taint-scope.md`](docs/design/spring-taint-scope.md).
 

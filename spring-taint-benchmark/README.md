@@ -23,6 +23,7 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `sqli-through-service` | SQL injection (CWE-89) | yes — Controller→Service→Repository | vulnerable | ✅ |
 | `sqli-three-layers` | SQL injection (CWE-89) | yes — +Validator (4 layers) | vulnerable | ✅ |
 | `sqli-via-kafka` | SQL injection (CWE-89) | yes — `@KafkaListener` source | vulnerable | ✅ |
+| `sqli-via-rabbit` | SQL injection (CWE-89) | yes — `@RabbitListener` source (RabbitMQ) | vulnerable | ✅ |
 | `sqli-safe-parameterized` | SQL injection (CWE-89) | yes | **safe** (NamedParameter) | ✅ not flagged |
 | `sqli-safe-prepared` | SQL injection (CWE-89) | no | **safe** (`?` parameter) | ✅ not flagged |
 | `xss-reflected` | Reflected XSS (CWE-79) | no | vulnerable | ✅ |
@@ -36,6 +37,8 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `path-variable-sqli` | SQL injection (CWE-89) | no — `@PathVariable` source | vulnerable | ✅ |
 | `request-body-sqli` | SQL injection (CWE-89) | no — `@RequestBody` source | vulnerable | ✅ |
 | `request-header-xss` | XSS (CWE-79) | no — `@RequestHeader` source | vulnerable | ✅ |
+| `map-param-sqli` | SQL injection (CWE-89) | no — `@RequestParam Map` via `Map.get` | vulnerable | ✅ |
+| `bean-accessor-sqli` | SQL injection (CWE-89) | no — value round-trips through a DTO setter/getter | vulnerable | ✅ |
 | `webflux-sqli` | SQL injection (CWE-89) | reactive — R2DBC `DatabaseClient` | vulnerable | ✅ |
 | `jaxrs-sqli` | SQL injection (CWE-89) | JAX-RS `@QueryParam` (Quarkus) | vulnerable | ✅ |
 | `stored-xss` | XSS (CWE-79) | cross-request — `@Repository` read | vulnerable | ✅ |
@@ -57,14 +60,14 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `nearmiss-discarded-sanitizer` | XSS (CWE-79) | near-miss — `htmlEscape` result discarded | vulnerable | ✅ |
 | `nearmiss-wrong-context` | Open redirect (CWE-601) | near-miss — `htmlEscape` before `sendRedirect` | vulnerable | ✅ with `--src` |
 
-**34 vulnerable, 3 safe.** Current engine result: **33/33 detected by the taint engine
-(0 false positives); with the near-miss layer (`--src`) the wrong-context case makes it 34.**
-The first three near-miss cases reach the sink anyway (the bad sanitizer does not clear
-taint), so they are detected by default and annotated with the reason under `--src`.
-Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
-`@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, JAX-RS
-(`@QueryParam`), `@Repository` reads (stored / second-order injection), `@FeignClient`
-results, and `@Scheduled` entry points. Sinks on interface library types
+**37 vulnerable, 3 safe.** Current engine result: **36 of 37 detected by the taint engine
+(0 false positives); the near-miss layer (`--src`) catches the remaining wrong-context
+case (37).** The first three near-miss cases reach the sink anyway (the bad sanitizer
+does not clear taint), so they are detected by default and annotated with the reason
+under `--src`. Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
+`@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, `@RabbitListener`,
+JAX-RS (`@QueryParam`), `@Repository` reads (stored / second-order injection),
+`@FeignClient` results, and `@Scheduled` entry points. Sinks on interface library types
 (`sendRedirect`, R2DBC `DatabaseClient.sql`, Thymeleaf `ITemplateEngine`,
 `EntityManager`) are matched via Tai-e `call-site-mode`. Framework-internal sinks
 (e.g. a logging facade logging the SQL it received) are filtered out, so broad sinks
@@ -86,6 +89,7 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 │   ├── throughservice/  # Controller → Service → Repository (flagship)
 │   ├── threelayers/     # Controller → Service → Validator → Repository
 │   ├── viakafka/        # @KafkaListener payload as source
+│   ├── viarabbit/       # @RabbitListener payload as source
 │   └── safe/            # parameterized queries (negative cases)
 ├── xss/
 │   ├── reflected/       # request param → response writer
