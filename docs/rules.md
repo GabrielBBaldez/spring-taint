@@ -198,6 +198,18 @@ pass them with `--config` (merged onto the defaults; `--no-default-config` to
 replace). Sinks declared on interface library types (no concrete implementation on
 the classpath) are matched via Tai-e `call-site-mode`.
 
+## Confidence scores and diff mode
+
+Each taint finding carries a **confidence** (0-100), derived from the call path:
+short, lambda-free flows into a concrete injection sink score highest; long or
+lambda-bearing paths score lower (and are flagged "review manually" below 50). The
+score is shown in the console and written to SARIF as `result.properties.confidence`.
+
+For pull requests, `scan --diff <ref>` (e.g. `--diff origin/main`) reports only
+findings whose trace touches a file changed against `<ref>`, using `git diff`. Run
+a full scan periodically as well — diff matching is by file, so a flow split across
+a changed sink and an unchanged source could be missed.
+
 ## Known limitations
 
 - The reported trace is the shortest **call path** from source to sink (control

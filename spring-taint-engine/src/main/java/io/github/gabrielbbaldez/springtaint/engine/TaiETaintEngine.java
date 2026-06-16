@@ -211,7 +211,40 @@ public final class TaiETaintEngine implements TaintEngine {
 
         String message = "Tainted data reaches " + flow.sinkMethodName() + " (" + vuln + ")";
         return new Finding(vuln, severity, message, null,
-                flow.sinkClass() + ".java", flow.sinkLine(), trace);
+                flow.sinkClass() + ".java", flow.sinkLine(), trace, confidence(vuln, hops));
+    }
+
+    /** High-confidence categories: concrete, well-known sinks for a real injection. */
+    private static final java.util.Set<String> STRONG_SINKS = java.util.Set.of(
+            "sql-injection", "jpql-injection", "command-injection", "spel-injection",
+            "jndi-injection", "template-injection", "path-traversal", "xxe");
+
+    /**
+     * A 0-100 confidence that a taint finding is real, from signals on the call path.
+     * Our engine reports no false positives on the benchmark, so this mainly conveys
+     * how many assumptions a flow makes in real-world code: short, lambda-free paths
+     * into a concrete injection sink are the most certain.
+     */
+    private static int confidence(String vuln, List<Hop> hops) {
+        int score = 70;
+        int intermediate = Math.max(0, hops.size() - 2);   // hops excluding source and sink
+        if (intermediate == 0) {
+            score += 20;
+        } else if (intermediate <= 2) {
+            score += 10;
+        } else if (intermediate >= 5) {
+            score -= 15;
+        }
+        if (STRONG_SINKS.contains(vuln)) {
+            score += 10;
+        }
+        // A lambda on the path leans on Tai-e's partial lambda support — less certain.
+        boolean lambda = hops.stream().anyMatch(h ->
+                h.methodName().contains("lambda$") || h.className().contains("Lambda"));
+        if (lambda) {
+            score -= 15;
+        }
+        return Math.max(10, Math.min(99, score));
     }
 
     /** Maps each sink method (by declaring class + name) to its vulnerability category. */

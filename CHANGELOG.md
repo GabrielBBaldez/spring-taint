@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-06-16
+
+### Added
+- **Confidence score** on every taint finding (0-100), derived from the call path
+  (number of hops, sink category, lambdas on the path). Shown in the console and
+  written to SARIF as `result.properties.confidence`; low scores are flagged
+  "review manually".
+- **Diff mode** — `scan --diff <ref>` reports only findings whose trace touches a
+  file changed against `<ref>` (via `git diff`), for fast pull-request scans. A
+  full scan is still recommended periodically, since matching is by file.
+
+### Changed
+- CLI and SARIF tool version strings updated.
+
 ## [0.7.0] - 2026-06-16
 
 ### Added
@@ -91,6 +105,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.8.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.7.0
 [0.6.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.6.0
 [0.5.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.5.0

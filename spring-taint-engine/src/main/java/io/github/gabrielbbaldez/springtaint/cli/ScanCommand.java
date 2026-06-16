@@ -61,6 +61,11 @@ public final class ScanCommand implements Callable<Integer> {
                     + "onto the built-in default rules.")
     private boolean noDefaultConfig;
 
+    @Option(names = "--diff", paramLabel = "REF",
+            description = "Only report findings whose trace touches a file changed vs REF "
+                    + "(e.g. origin/main). Uses 'git diff'; run from the repository.")
+    private String diffRef;
+
     @Override
     public Integer call() throws Exception {
         if (target == null || !Files.exists(target)) {
@@ -75,6 +80,10 @@ public final class ScanCommand implements Callable<Integer> {
 
         TaintEngine engine = new TaiETaintEngine();
         List<Finding> findings = filter(engine.analyze(request), severities);
+
+        if (diffRef != null && !diffRef.isBlank()) {
+            findings = filterToDiff(findings, diffRef);
+        }
 
         new ConsoleReporter(System.out, verbose).report(findings);
 
@@ -120,6 +129,53 @@ public final class ScanCommand implements Callable<Integer> {
         }
         try (InputStream bundled = getClass().getResourceAsStream("/spring-taint.yml")) {
             return bundled == null ? null : TaintConfigLoader.load(bundled);
+        }
+    }
+
+    /**
+     * Keeps only findings whose trace touches a file changed against {@code ref}
+     * (per {@code git diff --name-only}). A flow is matched if its sink <em>or</em>
+     * any step on the path lives in a changed file.
+     *
+     * <p>Matching is by file name, so a finding may be missed if its source is in an
+     * unchanged file and only its sink changed (or vice-versa); run a full scan
+     * periodically (e.g. nightly) alongside diff scans on pull requests.
+     */
+    private List<Finding> filterToDiff(List<Finding> findings, String ref) {
+        Set<String> changed = changedFiles(ref);
+        if (changed == null) {
+            System.err.println("--diff: could not determine changed files; reporting all findings.");
+            return findings;
+        }
+        List<Finding> kept = findings.stream()
+                .filter(f -> changed.contains(f.file())
+                        || f.flow().stream().anyMatch(s -> changed.contains(s.file())))
+                .collect(Collectors.toList());
+        System.out.printf("Diff mode: %d of %d finding(s) touch files changed vs %s.%n",
+                kept.size(), findings.size(), ref);
+        return kept;
+    }
+
+    /** Base names of {@code .java} files changed vs {@code ref}, or {@code null} on error. */
+    private static Set<String> changedFiles(String ref) {
+        try {
+            Process p = new ProcessBuilder("git", "diff", "--name-only", ref).start();
+            Set<String> names = new java.util.HashSet<>();
+            try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                    p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    if (line.endsWith(".java")) {
+                        names.add(line.substring(line.lastIndexOf('/') + 1));
+                    }
+                }
+            }
+            return p.waitFor() == 0 ? names : null;
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return null;
         }
     }
 

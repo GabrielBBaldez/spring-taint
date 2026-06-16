@@ -22,10 +22,11 @@ public final class ConsoleReporter {
             return;
         }
         for (Finding f : findings) {
-            out.printf("[%s] %s%s%n",
-                    f.severity(),
-                    f.ruleId(),
-                    f.route() == null ? "" : " @ " + f.route());
+            String route = f.route() == null ? "" : " @ " + f.route();
+            String confidence = f.confidence() == null ? ""
+                    : String.format(" (confidence: %d%%%s)",
+                            f.confidence(), f.confidence() < 50 ? " - review manually" : "");
+            out.printf("[%s] %s%s%s%n", f.severity(), f.ruleId(), route, confidence);
 
             if (f.flow().size() <= 1) {
                 // single-location finding (e.g. a hardcoded secret) — not a taint flow
