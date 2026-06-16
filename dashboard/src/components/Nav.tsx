@@ -11,7 +11,7 @@ export function Nav({ route }: { route: Route }) {
   return (
     <header className="nav">
       <a className="brand" href="#/home" aria-label="spring-taint home">
-        <img className="logo" src="logo.png" alt="" width={34} height={34} />
+        <img className="logo" src={import.meta.env.BASE_URL + "logo.png"} alt="" width={34} height={34} />
         <span className="brand-name">
           spring<span className="dot">·</span>taint
         </span>

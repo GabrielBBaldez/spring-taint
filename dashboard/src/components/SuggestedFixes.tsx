@@ -2,6 +2,23 @@ import { useState, type CSSProperties } from "react";
 import { SEV_COLOR, type Finding } from "../lib/sarif";
 import { FixDiff } from "./FixDiff";
 
+/** Fallback when the async Clipboard API is unavailable (non-HTTPS context, old browser). */
+function legacyCopy(text: string, done: () => void) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    done();
+  } catch {
+    /* clipboard genuinely unavailable; nothing more we can do */
+  }
+}
+
 /** Front-and-centre panel: every finding the analyzer can auto-fix, shown as a review card. */
 export function SuggestedFixes({ findings }: { findings: Finding[] }) {
   const fixable = findings.filter((f) => f.fix);
@@ -32,10 +49,16 @@ function FixCard({ finding }: { finding: Finding }) {
     .join("\n");
 
   const copy = () => {
-    navigator.clipboard?.writeText(added).then(() => {
+    if (!added) return;
+    const done = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1400);
-    });
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(added).then(done, () => legacyCopy(added, done));
+    } else {
+      legacyCopy(added, done);
+    }
   };
 
   return (

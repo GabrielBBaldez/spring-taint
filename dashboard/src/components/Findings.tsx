@@ -31,7 +31,16 @@ export function Findings({
                 key={s}
                 className={`chip ${sevFilter.has(s) ? "active" : ""}`}
                 style={{ "--c": SEV_COLOR[s] } as CSSProperties}
+                role="button"
+                tabIndex={0}
+                aria-pressed={sevFilter.has(s)}
                 onClick={() => toggleSev(s)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleSev(s);
+                  }
+                }}
               >
                 {s}
                 <span className="cn">{sevCount[s]}</span>
@@ -74,7 +83,19 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
       className={`finding reveal ${open ? "open" : ""}`}
       style={{ "--c": c, animationDelay: `${Math.min(index * 0.03, 0.4)}s` } as CSSProperties}
     >
-      <div className="f-head" onClick={() => setOpen((o) => !o)}>
+      <div
+        className="f-head"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((o) => !o);
+          }
+        }}
+      >
         <span className="f-sev">{finding.severity}</span>
         <div className="f-main">
           <div className="f-rule">

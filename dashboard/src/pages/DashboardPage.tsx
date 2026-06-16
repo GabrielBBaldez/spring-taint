@@ -14,7 +14,7 @@ export function DashboardPage() {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    fetch("sample.sarif")
+    fetch(import.meta.env.BASE_URL + "sample.sarif")
       .then((r) => r.json())
       .then((d) => setReport(parseSarif(d)))
       .catch(() => setReport({ tool: "spring-taint", findings: [] }));
@@ -24,7 +24,7 @@ export function DashboardPage() {
     file
       .text()
       .then((t) => setReport(parseSarif(JSON.parse(t))))
-      .catch((e) => alert("Could not parse SARIF: " + e.message));
+      .catch((e) => alert("Could not parse SARIF: " + (e instanceof Error ? e.message : String(e))));
   }, []);
 
   // drag & drop a SARIF file anywhere on this page

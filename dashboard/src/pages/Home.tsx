@@ -52,7 +52,7 @@ export function Home() {
   return (
     <main className="page">
       <section className="hero wrap">
-        <img className="hero-logo" src="logo.png" alt="" width={96} height={96} />
+        <img className="hero-logo" src={import.meta.env.BASE_URL + "logo.png"} alt="" width={96} height={96} />
         <h1 className="hero-title">
           spring<span className="dot">·</span>taint
         </h1>
