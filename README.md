@@ -184,11 +184,13 @@ Per-rule reference: [docs/rules.md](docs/rules.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
 
-Beyond the synthetic benchmark, the analyzer is run against real OSS apps to measure
-its false-positive rate on code not written for it. On **spring-petclinic** (Spring
-Boot 4.0) it engaged correctly (9 entry points, 12 sources) and reported **0 false
-positives**, plus one legitimate config finding the project itself flags as
-production-unsafe — see [docs/validation.md](docs/validation.md).
+Beyond the synthetic benchmark, the analyzer is run against real OSS apps. On the
+clean **spring-petclinic** (Spring Boot 4.0) it engaged correctly (9 entry points, 12
+sources) and reported **0 false positives** (plus one legitimate config finding the
+project itself flags as production-unsafe). On a vulnerable app
+(**sql-injection-web**) it found the real **cross-layer** SQL injection (controller →
+repository, two files) at 99% confidence and generated the correct fix. See
+[docs/validation.md](docs/validation.md).
 
 ---
 

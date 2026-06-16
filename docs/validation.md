@@ -2,8 +2,9 @@
 
 Beyond the synthetic [benchmark](../spring-taint-benchmark/README.md) (which measures
 recall and precision against known ground truth), the analyzer is run against real
-open-source Spring Boot applications to measure its **false-positive rate on code that
-was not written for it**.
+open-source Spring Boot applications: a clean app to measure **precision** (false
+positives on code not written for it) and an intentionally-vulnerable app to measure
+**recall** (does it find a real, cross-layer flaw).
 
 ## spring-petclinic
 
@@ -28,8 +29,42 @@ Boot application, and one legitimate configuration finding** that the project it
 documents as production-unsafe. The engine correctly identified petclinic's controllers
 as entry points despite it targeting a much newer Spring version than the benchmark.
 
-Recall (finding real vulnerabilities) is covered by the benchmark (33/33, 0 FP); a
-validation run against an intentionally-vulnerable real application is future work.
+## sql-injection-web (recall)
+
+[`littlewhywhat/sql-injection-web`](https://github.com/littlewhywhat/sql-injection-web)
+— a small, intentionally-vulnerable Spring Boot app (not written for this tool). The
+flaw crosses a layer boundary: a request parameter in the controller reaches a
+JdbcTemplate call in a separate repository class.
+
+```java
+// ProductController.java
+@RequestMapping(value = "/add", method = RequestMethod.GET)
+public @ResponseBody boolean addProduct(@RequestParam("name") String name) {
+    return products.add(id, name);                 // crosses into the repository
+}
+
+// ProductRepository.java
+public boolean add(long id, String name) {
+    jdbcTemplate.execute("INSERT INTO products(id,name) values(" + id + ", '" + name + "')");
+}
+```
+
+Result — **detected**, with the correct fix generated:
+
+```
+[CRITICAL] sql-injection (confidence: 99%)
+  Source:  ProductController.java:33 - addProduct() - tainted parameter
+  Sink:    ProductRepository.java:45 - execute()
+
+[suggested fix] sql-injection - ProductRepository.java:45
+  - "values(" + id + ", '" + name + "')");
+  + jdbcTemplate.update("INSERT INTO products(id,name) values(?, ?)", id, name);
+```
+
+The flow is **interprocedural across two files** — precisely the case a same-method
+analyzer (e.g. SonarQube Community) does not report. (The repo's original 2014 build
+was replaced with a modern Spring Boot 3 / JDK 17 `pom.xml`; the vulnerable source is
+unchanged.)
 
 ### Reproduce
 
