@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.gabrielbbaldez</groupId>
         <artifactId>spring-taint-parent</artifactId>
-        <version>0.12.1</version>
+        <version>0.13.0</version>
     </parent>
 
     <artifactId>spring-taint-engine</artifactId>
@@ -27,11 +27,13 @@
             </exclusions>
         </dependency>
 
-        <!-- ASM for the bytecode-level secrets scanner (same version Tai-e bundles). -->
+        <!-- ASM for the bytecode-level secrets/misconfig scanners. 9.7 reads class files
+             up to Java 23, so these scanners work on bytecode from any modern JDK
+             (9.4 threw on Java 21+). -->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.4</version>
+            <version>9.7</version>
         </dependency>
 
         <!-- JavaParser for autofix: rewrite the source to a parameterized query. -->

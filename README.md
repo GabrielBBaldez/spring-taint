@@ -371,6 +371,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Advanced sources: `@FeignClient` results (cross-service), `@Scheduled` jobs as entry points, and `@Transactional` write-then-read stored injection
 - [x] Near-miss sanitizers (`--src`): flags insufficient (quote-stripping), blacklist, discarded-result, and wrong-context sanitization — the "I'm sure this is safe" class of bug
 - [x] Autofix (`--suggest-fixes` / `--fix`): rewrites a concatenated SQL query into a parameterized one; verified end-to-end (applying the fixes drops the benchmark's SQL findings 15 → 1 and the patched code compiles)
+- [x] Unit-test suite for the scanners (18 tests, with regression coverage); the bytecode scanners (`secrets`/`misconfig`) read any-JDK class files (ASM 9.7)
 
 ---
 

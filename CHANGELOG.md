@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.13.0] - 2026-06-16
+
+### Added
+- A unit-test suite for the scanners (autofix, near-miss, config audit, config
+  validator, secrets, misconfig), including regression tests for the v0.12.1 fixes
+  (cross-method variable scoping, ambiguous file names, sensitive-getter false
+  positive, cross-method escaped variable). Test count went from 2 to 18; an
+  in-memory Java compiler builds bytecode fixtures for the ASM-based scanners.
+
+### Fixed
+- The bytecode scanners (`secrets`, `misconfig`) now read class files from any
+  modern JDK. ASM was bumped 9.4 → 9.7; 9.4 threw "Unsupported class file major
+  version 65" on Java 21+ bytecode, so the "any JDK" claim now actually holds. (The
+  taint `scan` still needs JDK 17 — that is a separate Tai-e frontend limitation.)
+
 ## [0.12.1] - 2026-06-16
 
 ### Fixed
@@ -181,6 +196,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.13.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.13.0
 [0.12.1]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.1
 [0.12.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.0
 [0.11.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.11.0

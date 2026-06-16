@@ -22,7 +22,7 @@ public final class SarifWriter {
 
     private static final String SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
     private static final String TOOL_NAME = "Spring Taint Analyzer";
-    private static final String TOOL_VERSION = "0.12.1";
+    private static final String TOOL_VERSION = "0.13.0";
     private static final String TOOL_URI = "https://github.com/GabrielBBaldez/spring-taint";
 
     private final ObjectMapper mapper = new ObjectMapper();
