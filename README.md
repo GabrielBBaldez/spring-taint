@@ -98,6 +98,7 @@ interprocedural taint:
 | JPQL / template / JNDI / XXE injection | ✅ | ❌ | ❌ |
 | Spring Security & `application.yml` misconfig | ✅ | ❌ | ❌ |
 | Near-miss sanitizer detection (wrong/insufficient sanitization) | ✅ | ❌ | ❌ |
+| Autofix — applies a parameterized-query patch | ✅ | ❌ | ❌ |
 | Per-finding confidence score | ✅ | ❌ | ❌ |
 | Diff mode for pull requests | ✅ | ❌ | ✅ |
 | SARIF 2.1 output | ✅ | ✅ | ✅ |
@@ -216,6 +217,12 @@ spring-taint scan target/classes --libs "…" --severity critical,high --verbose
 
 # Only findings touching files changed vs a base ref (fast PR scans)
 spring-taint scan target/classes --libs "…" --diff origin/main
+
+# Near-miss notes + suggested parameterized-query fixes (needs the sources)
+spring-taint scan target/classes --libs "…" --src src/main/java --suggest-fixes
+
+# Apply the high-confidence fixes to the source
+spring-taint scan target/classes --libs "…" --src src/main/java --fix
 ```
 
 Example output (every taint finding carries a confidence score):
@@ -363,6 +370,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Adoption: per-finding confidence score (console + SARIF), `scan --diff <ref>` for fast pull-request scans, inline `// spring-taint: suppress` comments (`--src` / `suppressions`), and `validate-config` to catch typo'd custom rules
 - [x] Advanced sources: `@FeignClient` results (cross-service), `@Scheduled` jobs as entry points, and `@Transactional` write-then-read stored injection
 - [x] Near-miss sanitizers (`--src`): flags insufficient (quote-stripping), blacklist, discarded-result, and wrong-context sanitization — the "I'm sure this is safe" class of bug
+- [x] Autofix (`--suggest-fixes` / `--fix`): rewrites a concatenated SQL query into a parameterized one; verified end-to-end (applying the fixes drops the benchmark's SQL findings 15 → 1 and the patched code compiles)
 
 ---
 

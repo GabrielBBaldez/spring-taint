@@ -257,6 +257,30 @@ the rule to suppress any finding on the line. `scan --src <dir>` then drops matc
 findings (and reports how many). `spring-taint suppressions <dir>` lists every
 directive so they can be audited.
 
+## Autofix (parameterized queries)
+
+For SQL-injection findings, `scan --src <dir> --suggest-fixes` generates the
+parameterized-query fix and shows it as a diff:
+
+```
+[suggested fix] sql-injection - UserRepository.java:34 (low confidence)
+  use a parameterized query (1 bound parameter)
+  - return jdbc.query("SELECT * FROM users WHERE name = '" + name + "'", mapper);
+  + return jdbc.query("SELECT * FROM users WHERE name = ?", mapper, name);
+```
+
+The concatenated string becomes a `?`-placeholder query and the interpolated values
+become bound parameters (surrounding quotes are dropped). `--fix` applies the fix to
+the source; by default only **high-confidence** fixes (a short single-method flow)
+are applied, while cross-layer ones are shown but left for review — pass
+`--fix-confidence all` to apply every suggestion. The rewrite uses a source parser
+(JavaParser) and preserves formatting, so the diff is minimal.
+
+Scope, by design: JdbcTemplate `query`/`update`/`execute` whose argument is a string
+concatenation. Anything else is left untouched rather than guessed at — a wrong fix
+is worse than none. The source must be compiled with debug info (Maven's default) so
+findings map back to source lines.
+
 ## Validating a custom config
 
 `spring-taint validate-config [config.yml] --classpath <cp>` resolves every method

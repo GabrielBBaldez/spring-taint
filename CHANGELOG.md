@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-06-16
+
+### Added
+- **Autofix for SQL injection** — `scan --src <dir> --suggest-fixes` generates the
+  parameterized-query fix (concatenation → `?` placeholders + bound parameters,
+  surrounding quotes dropped) and shows it as a diff; `--fix` applies high-confidence
+  fixes to the source (`--fix-confidence all` for every suggestion). The rewrite uses
+  JavaParser and preserves formatting. Verified end-to-end: applying the fixes drops
+  the benchmark's SQL findings from 15 to 1 (the remaining one is R2DBC, out of scope)
+  and the patched code compiles.
+
 ## [0.11.0] - 2026-06-16
 
 ### Added
@@ -147,6 +158,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.12.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.0
 [0.11.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.11.0
 [0.10.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.10.0
 [0.9.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.9.0

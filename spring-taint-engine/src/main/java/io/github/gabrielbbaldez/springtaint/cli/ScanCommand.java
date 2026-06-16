@@ -67,8 +67,20 @@ public final class ScanCommand implements Callable<Integer> {
     private String diffRef;
 
     @Option(names = "--src", paramLabel = "DIR",
-            description = "Source directory; honours inline '// spring-taint: suppress RULE' comments.")
+            description = "Source directory; enables suppression comments, near-miss notes, and fixes.")
     private Path src;
+
+    @Option(names = "--suggest-fixes",
+            description = "Show suggested fixes (e.g. parameterized queries) without applying. Needs --src.")
+    private boolean suggestFixes;
+
+    @Option(names = "--fix",
+            description = "Apply high-confidence fixes to the source files. Needs --src.")
+    private boolean fix;
+
+    @Option(names = "--fix-confidence", paramLabel = "LEVEL",
+            description = "With --fix: 'high' (default; only short single-method flows) or 'all'.")
+    private String fixConfidence = "high";
 
     @Override
     public Integer call() throws Exception {
@@ -97,6 +109,10 @@ public final class ScanCommand implements Callable<Integer> {
         }
 
         new ConsoleReporter(System.out, verbose).report(findings);
+
+        if (suggestFixes || fix) {
+            handleFixes(findings);
+        }
 
         if (output != null) {
             new SarifWriter().write(output, findings);
@@ -205,6 +221,42 @@ public final class ScanCommand implements Callable<Integer> {
                 Thread.currentThread().interrupt();
             }
             return null;
+        }
+    }
+
+    /** Generates parameterized-query fixes; shows them, and applies high-confidence ones with --fix. */
+    private void handleFixes(List<Finding> findings) throws IOException {
+        if (src == null) {
+            System.err.println("--suggest-fixes / --fix needs --src <source dir>.");
+            return;
+        }
+        List<io.github.gabrielbbaldez.springtaint.autofix.Patch> patches =
+                new io.github.gabrielbbaldez.springtaint.autofix.AutofixGenerator().generate(findings, src);
+        if (patches.isEmpty()) {
+            System.out.println("\nNo automatic fixes available.");
+            return;
+        }
+        boolean applyAll = "all".equalsIgnoreCase(fixConfidence);
+        java.util.Set<Path> applied = new java.util.HashSet<>();
+        System.out.println();
+        for (io.github.gabrielbbaldez.springtaint.autofix.Patch p : patches) {
+            boolean canApply = fix && (applyAll || p.highConfidence());
+            System.out.printf("[%s] %s - %s:%d (%s confidence)%n",
+                    canApply ? "fix" : "suggested fix", p.rule(),
+                    p.file().getFileName(), p.line(), p.highConfidence() ? "high" : "low");
+            System.out.printf("  %s%n", p.description());
+            System.out.print(p.diff());
+            if (canApply && applied.add(p.file())) {
+                Files.writeString(p.file(), p.newSource());
+                System.out.println("  applied.");
+            } else if (canApply) {
+                System.out.println("  skipped: another fix already applied to this file this run; re-run to continue.");
+            }
+            System.out.println();
+        }
+        if (!fix) {
+            System.out.println("Run with --fix to apply the high-confidence fixes "
+                    + "(--fix-confidence all to apply every suggestion).");
         }
     }
 

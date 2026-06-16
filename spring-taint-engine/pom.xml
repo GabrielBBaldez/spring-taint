@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.gabrielbbaldez</groupId>
         <artifactId>spring-taint-parent</artifactId>
-        <version>0.11.0</version>
+        <version>0.12.0</version>
     </parent>
 
     <artifactId>spring-taint-engine</artifactId>
@@ -32,6 +32,13 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
             <version>9.4</version>
+        </dependency>
+
+        <!-- JavaParser for autofix: rewrite the source to a parameterized query. -->
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.26.2</version>
         </dependency>
 
         <!-- CLI -->
