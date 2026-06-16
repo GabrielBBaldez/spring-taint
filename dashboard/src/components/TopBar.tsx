@@ -18,11 +18,7 @@ export function TopBar({
   return (
     <header className="topbar">
       <div className="brand">
-        <svg className="logo" viewBox="0 0 40 40" aria-hidden>
-          <path className="logo-flow" d="M8 8 L8 20 Q8 26 14 26 L26 26 Q32 26 32 32" />
-          <circle className="logo-src" cx="8" cy="8" r="3.4" />
-          <circle className="logo-snk" cx="32" cy="32" r="3.4" />
-        </svg>
+        <img className="logo" src="logo.png" alt="Spring Taint" width={38} height={38} />
         <div className="brand-text">
           <span className="brand-name">
             spring<span className="dot">·</span>taint
