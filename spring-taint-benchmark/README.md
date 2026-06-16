@@ -33,11 +33,15 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `path-traversal-direct` | Path traversal (CWE-22) | no | vulnerable | ✅ |
 | `cmdi-direct` | Command injection (CWE-78) | no | vulnerable | ✅ |
 | `open-redirect` | Open redirect (CWE-601) | no | vulnerable | ✅ |
+| `path-variable-sqli` | SQL injection (CWE-89) | no — `@PathVariable` source | vulnerable | ✅ |
+| `request-body-sqli` | SQL injection (CWE-89) | no — `@RequestBody` source | vulnerable | ✅ |
+| `request-header-xss` | XSS (CWE-79) | no — `@RequestHeader` source | vulnerable | ✅ |
+| `webflux-sqli` | SQL injection (CWE-89) | reactive — R2DBC `DatabaseClient` | vulnerable | ✅ |
 
-**11 vulnerable, 3 safe.** Current engine result: **11/11 detected, 0 false positives.**
-Open redirect — whose sink (`sendRedirect`) is called on an interface-typed
-parameter with no concrete implementation — is detected via call-site sink
-matching (Tai-e `call-site-mode`).
+**15 vulnerable, 3 safe.** Current engine result: **15/15 detected, 0 false positives.**
+Sources covered: `@RequestParam`, `@PathVariable`, `@RequestBody`, `@RequestHeader`,
+`@KafkaListener`. Sinks on interface library types (`sendRedirect`, R2DBC
+`DatabaseClient.sql`) are matched via Tai-e `call-site-mode`.
 
 ## Layout
 
@@ -57,6 +61,8 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 │   └── resttemplate/    # user URL → RestTemplate.getForObject
 ├── spel/                # user expression → ExpressionParser.parseExpression
 ├── openredirect/        # user URL → response.sendRedirect
+├── sources/             # @PathVariable / @RequestBody / @RequestHeader sources
+├── webflux/             # reactive R2DBC DatabaseClient (WebFlux)
 ├── pathtraversal/
 │   └── direct/          # filename → new File(...)
 └── cmdi/

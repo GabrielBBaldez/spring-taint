@@ -148,13 +148,52 @@ cases:
     sinkFile: openredirect/OpenRedirectController.java
     note: "user-controlled redirect target; detected via call-site sink matching"
 
+  # ---------------- Source coverage (Spring MVC inputs) ----------------
+  - id: path-variable-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: sources/PathVariableSqliController.java
+    sinkFile: sources/PathVariableSqliController.java
+    note: "source is @PathVariable"
+
+  - id: request-body-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: sources/RequestBodySqliController.java
+    sinkFile: sources/RequestBodySqliController.java
+    note: "source is @RequestBody"
+
+  - id: request-header-xss
+    category: xss
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: sources/RequestHeaderXssController.java
+    sinkFile: sources/RequestHeaderXssController.java
+    note: "source is @RequestHeader"
+
+  # ---------------- Reactive (WebFlux / R2DBC) ----------------
+  - id: webflux-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: webflux/WebFluxSqliController.java
+    sinkFile: webflux/WebFluxSqliController.java
+    note: "reactive R2DBC DatabaseClient.sql sink (interface), matched via call-site mode"
+
 # Totals (kept in sync by hand).
 summary:
-  total: 14
-  expectedVulnerable: 11
+  total: 18
+  expectedVulnerable: 15
   expectedSafe: 3
   categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
+  sources: [RequestParam, PathVariable, RequestBody, RequestHeader, KafkaListener]
   # Current engine results on this benchmark:
-  detectedVulnerable: 11   # all vulnerable cases
+  detectedVulnerable: 15   # all vulnerable cases
   falsePositives: 0
   knownGaps: []

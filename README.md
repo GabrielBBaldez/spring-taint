@@ -130,12 +130,14 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **14 cases (11 vulnerable, 3 safe)** across SQL injection
-(direct, through-service, four-layer, via-Kafka), reflected & conditional-sanitizer
-XSS, SSRF, SpEL injection, path traversal, command injection, and open redirect,
-with documented ground truth in [`expected.yml`](spring-taint-benchmark/expected.yml).
+The benchmark has **18 cases (15 vulnerable, 3 safe)** across SQL injection
+(direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected &
+conditional-sanitizer XSS, SSRF, SpEL injection, path traversal, command injection,
+and open redirect — with sources from `@RequestParam`, `@PathVariable`,
+`@RequestBody`, `@RequestHeader` and `@KafkaListener`. Ground truth is in
+[`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **11/11 vulnerable cases detected, 0 false positives** on
+Current engine result: **15/15 vulnerable cases detected, 0 false positives** on
 the 3 safe cases. Full table and per-case status:
 [benchmark README](spring-taint-benchmark/README.md).
 
@@ -270,7 +272,7 @@ benchmark on every push — see [`.github/workflows/ci.yml`](.github/workflows/c
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **11/11 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection, open redirect
+- [x] precision/recall on the current benchmark — **15/15 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection, open redirect; sources: @RequestParam/@PathVariable/@RequestBody/@RequestHeader/@KafkaListener
 - [x] GitHub Action (Docker) + self-contained jar + CI workflow
 - [ ] Public release v0.1.0
 
