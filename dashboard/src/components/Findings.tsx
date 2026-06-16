@@ -76,7 +76,10 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
       <div className="f-head" onClick={() => setOpen((o) => !o)}>
         <span className="f-sev">{finding.severity}</span>
         <div className="f-main">
-          <div className="f-rule">{finding.ruleId}</div>
+          <div className="f-rule">
+            {finding.ruleId}
+            {finding.confidence != null && <span className="conf">{finding.confidence}%</span>}
+          </div>
           <div className="f-msg">{finding.message}</div>
         </div>
         <div className="f-loc">
@@ -88,6 +91,11 @@ function FindingRow({ finding, index }: { finding: Finding; index: number }) {
       </div>
       <div className="f-body">
         <div>
+          {finding.nearMiss && (
+            <div className="nearmiss">
+              <b>near-miss sanitizer:</b> {finding.nearMiss}
+            </div>
+          )}
           <TaintFlow finding={finding} />
         </div>
       </div>

@@ -52,13 +52,15 @@ export default function App() {
   const stats = useMemo(() => {
     const sevCount: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
     const ruleCount: Record<string, number> = {};
+    const ruleSeverity: Record<string, Severity> = {};
     const files = new Set<string>();
     for (const f of report?.findings ?? []) {
       sevCount[f.severity]++;
       ruleCount[f.ruleId] = (ruleCount[f.ruleId] ?? 0) + 1;
+      ruleSeverity[f.ruleId] = f.severity;
       files.add(f.file);
     }
-    return { sevCount, ruleCount, files: files.size, rules: Object.keys(ruleCount).length };
+    return { sevCount, ruleCount, ruleSeverity, files: files.size, rules: Object.keys(ruleCount).length };
   }, [report]);
 
   const filtered = useMemo(() => {
@@ -92,7 +94,7 @@ export default function App() {
 
         <section className="panels">
           <SeverityDonut sevCount={stats.sevCount} total={total} />
-          <RuleBars ruleCount={stats.ruleCount} severityOf={severityOf} />
+          <RuleBars ruleCount={stats.ruleCount} severityOf={(r) => stats.ruleSeverity[r] ?? severityOf(r)} />
         </section>
 
         <Findings

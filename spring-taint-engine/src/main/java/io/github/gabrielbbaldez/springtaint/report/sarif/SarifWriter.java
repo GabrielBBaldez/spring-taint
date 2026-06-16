@@ -93,14 +93,16 @@ public final class SarifWriter {
                 locs.addObject().set("location", location(step));
             }
         }
-        if (f.confidence() != null || f.nearMiss() != null) {
-            ObjectNode props = result.putObject("properties");
-            if (f.confidence() != null) {
-                props.put("confidence", f.confidence());
-            }
-            if (f.nearMiss() != null) {
-                props.put("nearMiss", f.nearMiss());
-            }
+        // Always expose the precise severity: the SARIF `level` (error/warning/note)
+        // cannot distinguish critical from high, so consumers (e.g. the dashboard) read
+        // this instead of guessing from the rule id.
+        ObjectNode props = result.putObject("properties");
+        props.put("severity", f.severity().name().toLowerCase(java.util.Locale.ROOT));
+        if (f.confidence() != null) {
+            props.put("confidence", f.confidence());
+        }
+        if (f.nearMiss() != null) {
+            props.put("nearMiss", f.nearMiss());
         }
         return result;
     }

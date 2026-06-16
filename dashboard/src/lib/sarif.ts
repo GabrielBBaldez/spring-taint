@@ -13,6 +13,8 @@ export interface Finding {
   file: string;
   line: number;
   trace: TraceStep[];
+  confidence?: number;
+  nearMiss?: string;
 }
 
 export interface ParsedReport {
@@ -29,20 +31,40 @@ export const SEV_COLOR: Record<Severity, string> = {
 
 export const SEV_LIST: Severity[] = ["critical", "high", "medium"];
 
+// Fallback severity by rule id, used only for SARIF that lacks `properties.severity`
+// (the engine writes the real severity there). Kept complete -- including the pattern
+// scanners -- so older reports still colour correctly.
 const SEVERITY: Record<string, Severity> = {
   "sql-injection": "critical",
+  "jpql-injection": "critical",
   "command-injection": "critical",
   "spel-injection": "critical",
+  "jndi-injection": "critical",
+  "template-injection": "critical",
+  "hardcoded-secret": "critical",
   xss: "high",
   ssrf: "high",
+  xxe: "high",
   "path-traversal": "high",
+  "insecure-transport": "high",
+  "security-disabled": "high",
+  "insecure-config": "high",
   "open-redirect": "medium",
+  "actuator-exposure": "medium",
+  "h2-console-enabled": "medium",
+  "log-injection": "low",
 };
 
 const ORDER: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 export function severityOf(ruleId: string): Severity {
   return SEVERITY[ruleId] ?? "high";
+}
+
+const SEVERITIES: readonly string[] = ["critical", "high", "medium", "low"];
+
+function asSeverity(v: unknown): Severity | undefined {
+  return typeof v === "string" && SEVERITIES.includes(v) ? (v as Severity) : undefined;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -58,6 +80,7 @@ export function parseSarif(data: any): ParsedReport {
 
   const findings: Finding[] = results.map((res) => {
     const ruleId: string = res.ruleId ?? "taint";
+    const props = res.properties ?? {};
     const primary = readLocation(res.locations?.[0]?.physicalLocation);
     const flowLocations = res.codeFlows?.[0]?.threadFlows?.[0]?.locations ?? [];
     const trace: TraceStep[] = flowLocations.map((l: any) => ({
@@ -66,11 +89,14 @@ export function parseSarif(data: any): ParsedReport {
     }));
     return {
       ruleId,
-      severity: severityOf(ruleId),
+      // The engine writes the precise severity in properties; fall back to the rule map.
+      severity: asSeverity(props.severity) ?? severityOf(ruleId),
       message: res.message?.text ?? "",
       file: primary.file,
       line: primary.line,
       trace,
+      confidence: typeof props.confidence === "number" ? props.confidence : undefined,
+      nearMiss: typeof props.nearMiss === "string" ? props.nearMiss : undefined,
     };
   });
 
