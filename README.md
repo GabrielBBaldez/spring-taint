@@ -1,9 +1,17 @@
 # Spring Taint Analyzer
 
-> Interprocedural taint analysis for Spring Boot applications, built on [Tai-e](https://github.com/pascal-lab/Tai-e).
-> Detects data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
+[![CI](https://github.com/GabrielBBaldez/spring-taint/actions/workflows/ci.yml/badge.svg)](https://github.com/GabrielBBaldez/spring-taint/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/GabrielBBaldez/spring-taint?sort=semver)](https://github.com/GabrielBBaldez/spring-taint/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](#building)
 
-> 🚧 **Early development.** The benchmark and project structure are in place; the analysis engine is being wired to Tai-e. See [Status](#status).
+> Interprocedural taint analysis for Spring Boot applications, built on [Tai-e](https://github.com/pascal-lab/Tai-e).
+> Detects multi-layer data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
+
+Detects **8 vulnerability classes** across **5 frameworks**, including cross-layer,
+reactive, and cross-request stored injection — **17/17 vulnerable benchmark cases
+with 0 false positives.** Ships as a CLI, a self-contained jar, a Docker image, and
+a GitHub Action with SARIF 2.1 output.
 
 ---
 
@@ -294,6 +302,19 @@ Each release documents its limitations explicitly, alongside the test cases that
 
 ---
 
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the dev
+setup, how to add a benchmark case, and the PR checklist. Please also read the
+[Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, see
+[SECURITY.md](SECURITY.md).
+
+## Acknowledgements
+
+Built on [Tai-e](https://github.com/pascal-lab/Tai-e) (Nanjing University), which
+provides the call-graph construction, pointer analysis, and IFDS taint propagation.
+Tai-e is licensed under LGPL-3.0; this project depends on it as a library.
+
 ## License
 
-[Apache License 2.0](LICENSE).
+[MIT](LICENSE) © Gabriel Baldez.
