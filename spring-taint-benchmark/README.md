@@ -40,6 +40,8 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `map-param-sqli` | SQL injection (CWE-89) | no — `@RequestParam Map` via `Map.get` | vulnerable | ✅ |
 | `bean-accessor-sqli` | SQL injection (CWE-89) | no — value round-trips through a DTO setter/getter | vulnerable | ✅ |
 | `record-dto-sqli` | SQL injection (CWE-89) | no — `@RequestBody` record, taint via its accessor | vulnerable | ✅ |
+| `builder-dto-sqli` | SQL injection (CWE-89) | no — Lombok-`@Builder`-shape DTO (`builder().term().build()` → getter) | vulnerable | ✅ |
+| `fluent-dto-sqli` | SQL injection (CWE-89) | no — Lombok-`@Accessors(fluent)`-shape setter chains the taint | vulnerable | ✅ |
 | `webflux-sqli` | SQL injection (CWE-89) | reactive — R2DBC `DatabaseClient` | vulnerable | ✅ |
 | `jaxrs-sqli` | SQL injection (CWE-89) | JAX-RS `@QueryParam` (Quarkus) | vulnerable | ✅ |
 | `stored-xss` | XSS (CWE-79) | cross-request — `@Repository` read | vulnerable | ✅ |
@@ -61,9 +63,9 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `nearmiss-discarded-sanitizer` | XSS (CWE-79) | near-miss — `htmlEscape` result discarded | vulnerable | ✅ |
 | `nearmiss-wrong-context` | Open redirect (CWE-601) | near-miss — `htmlEscape` before `sendRedirect` | vulnerable | ✅ with `--src` |
 
-**38 vulnerable, 3 safe.** Current engine result: **37 of 38 detected by the taint engine
+**40 vulnerable, 3 safe.** Current engine result: **39 of 40 detected by the taint engine
 (0 false positives); the near-miss layer (`--src`) catches the remaining wrong-context
-case (38).** The first three near-miss cases reach the sink anyway (the bad sanitizer
+case (40).** The first three near-miss cases reach the sink anyway (the bad sanitizer
 does not clear taint), so they are detected by default and annotated with the reason
 under `--src`. Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
 `@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, `@RabbitListener`,

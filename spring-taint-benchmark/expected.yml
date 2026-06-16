@@ -213,6 +213,24 @@ cases:
     sinkFile: bean/RecordDtoSqliController.java
     note: "a @RequestBody record carries the taint out via its accessor (named after the component, not get*)"
 
+  - id: builder-dto-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: bean/BuilderDtoSqliController.java
+    sinkFile: bean/BuilderDtoSqliController.java
+    note: "Lombok @Builder shape: taint through a builder setter, build(), then the getter"
+
+  - id: fluent-dto-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: bean/FluentDtoSqliController.java
+    sinkFile: bean/FluentDtoSqliController.java
+    note: "Lombok @Accessors(fluent) shape: a field-named setter returns the bean for chaining"
+
   # ---------------- Reactive (WebFlux / R2DBC) ----------------
   - id: webflux-sqli
     category: sql-injection
@@ -424,8 +442,8 @@ cases:
 
 # Totals (kept in sync by hand).
 summary:
-  total: 41
-  expectedVulnerable: 38
+  total: 43
+  expectedVulnerable: 40
   expectedSafe: 3
   categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
                xxe, path-traversal, command-injection, log-injection, template-injection,
@@ -438,9 +456,9 @@ summary:
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, Spring AMQP/RabbitMQ,
                JAX-RS/Quarkus, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
-  detectedVulnerable: 37        # taint engine alone
-  detectedWithNearMiss: 38      # adding the near-miss layer (--src) catches the wrong-context case
+  detectedVulnerable: 39        # taint engine alone
+  detectedWithNearMiss: 40      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
   # No vulnerability is fully missed; one case (nearmiss-wrong-context) is detected only
-  # with the --src near-miss layer, not by the taint engine alone -- hence 37 vs 38.
+  # with the --src near-miss layer, not by the taint engine alone -- hence 39 vs 40.
   knownGaps: []

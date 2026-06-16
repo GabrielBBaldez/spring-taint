@@ -13,6 +13,7 @@ import pascal.taie.language.classes.ClassHierarchy;
 import pascal.taie.language.classes.JClass;
 import pascal.taie.language.classes.JField;
 import pascal.taie.language.classes.JMethod;
+import pascal.taie.language.type.ClassType;
 import pascal.taie.language.type.Type;
 import pascal.taie.language.type.TypeSystem;
 
@@ -112,10 +113,22 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
                     // String. A record's accessor is named after its component (e.g. term()),
                     // so it is matched by the field-name check, not the get*/is* prefix.
                     transfers.add(new TaintTransfer(method, base, result, method.getReturnType()));
-                } else if (method.getParamCount() == 1 && name.startsWith("set")
-                        && STRING_TYPE.equals(method.getParamType(0).getName())) {
-                    // setter: a tainted String taints the bean
+                } else if (method.getParamCount() == 1
+                        && STRING_TYPE.equals(method.getParamType(0).getName())
+                        && (name.startsWith("set") || name.startsWith("with") || declaresField(clazz, name))) {
+                    // setter / fluent setter / @With / builder setter: a tainted String taints
+                    // the bean. If it returns a reference (a fluent setter returns `this`, a
+                    // builder returns the builder, @With returns a new instance), the returned
+                    // object carries the taint too, so the call chain propagates it.
                     transfers.add(new TaintTransfer(method, arg0, base, clazz.getType()));
+                    if (returnsReference(method)) {
+                        transfers.add(new TaintTransfer(method, arg0, result, method.getReturnType()));
+                    }
+                } else if (method.getParamCount() == 0 && returnsReference(method)
+                        && isBuilderTerminal(clazz, name)) {
+                    // builder terminal (build()/create() on a *Builder type): the built object
+                    // carries the taint accumulated in the builder's setters.
+                    transfers.add(new TaintTransfer(method, base, result, method.getReturnType()));
                 }
             }
         }
@@ -141,6 +154,16 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
             }
         }
         return false;
+    }
+
+    /** A method that returns a reference (class) type -- a fluent setter, builder, or @With. */
+    private static boolean returnsReference(JMethod method) {
+        return method.getReturnType() instanceof ClassType;
+    }
+
+    /** {@code build()}/{@code create()} on a {@code *Builder} type (the builder terminal). */
+    private static boolean isBuilderTerminal(JClass clazz, String name) {
+        return (name.equals("build") || name.equals("create")) && clazz.getName().endsWith("Builder");
     }
 
     /** A @Repository read method ({@code find*}/{@code get*}/...) returning a String. */
