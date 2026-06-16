@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.10.0] - 2026-06-16
+
+### Added
+- **`@FeignClient` results as sources** — a value returned by a Feign client comes
+  from a downstream service and is untrusted at the caller, catching cross-service
+  injection. `String`-only, to stay precise.
+- **`@Scheduled` methods as entry points** — scheduled jobs take no request input,
+  but read external/persisted data internally; analysing their bodies lets those
+  sources reach sinks.
+- **`@Transactional` write-then-read** — input persisted and read back in one
+  transaction is covered by the `@Repository`-read source model.
+
+### Changed
+- Benchmark grows to 33 cases (30 vulnerable, 3 safe); engine detects **30/30**
+  with 0 false positives.
+
 ## [0.9.0] - 2026-06-16
 
 ### Added
@@ -116,6 +132,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.10.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.10.0
 [0.9.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.9.0
 [0.8.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.8.0
 [0.7.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.7.0

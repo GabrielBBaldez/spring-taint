@@ -38,6 +38,7 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
     }
 
     private static final String REPOSITORY_ANNOTATION = "org.springframework.stereotype.Repository";
+    private static final String FEIGN_ANNOTATION = "org.springframework.cloud.openfeign.FeignClient";
     private static final String STRING_TYPE = "java.lang.String";
 
     @Override
@@ -45,8 +46,10 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
         List<Source> sources = new ArrayList<>();
         int paramSources = 0;
         int storeSources = 0;
+        int feignSources = 0;
         for (JClass clazz : hierarchy.applicationClasses().toList()) {
             boolean isRepository = clazz.hasAnnotation(REPOSITORY_ANNOTATION);
+            boolean isFeignClient = clazz.hasAnnotation(FEIGN_ANNOTATION);
             for (JMethod method : clazz.getDeclaredMethods()) {
                 // Annotation-driven request inputs.
                 for (int index : SpringSources.taintedParams(method)) {
@@ -65,16 +68,30 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
                             method.getReturnType()));
                     storeSources++;
                 }
+                // Microservice calls: a value returned by a @FeignClient method comes
+                // from a downstream service and is untrusted at the caller. Same
+                // String-only restriction as persistence reads to stay precise.
+                if (isFeignClient && returnsString(method)) {
+                    sources.add(new CallSource(method,
+                            new IndexRef(IndexRef.Kind.VAR, InvokeUtils.RESULT, null),
+                            method.getReturnType()));
+                    feignSources++;
+                }
             }
         }
-        log.info("Spring layer: generated {} param source(s) and {} persistence-read source(s)",
-                paramSources, storeSources);
+        log.info("Spring layer: generated {} param source(s), {} persistence-read source(s) "
+                + "and {} feign-client source(s)", paramSources, storeSources, feignSources);
         return sources;
+    }
+
+    /** A non-static method returning {@code java.lang.String}. */
+    private static boolean returnsString(JMethod method) {
+        return !method.isStatic() && STRING_TYPE.equals(method.getReturnType().getName());
     }
 
     /** A @Repository read method ({@code find*}/{@code get*}/...) returning a String. */
     private static boolean isPersistenceRead(JMethod method) {
-        if (method.isStatic() || !STRING_TYPE.equals(method.getReturnType().getName())) {
+        if (!returnsString(method)) {
             return false;
         }
         String name = method.getName();

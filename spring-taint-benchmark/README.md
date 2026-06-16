@@ -49,15 +49,19 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 | `matrix-variable-sqli` | SQL injection (CWE-89) | no — `@MatrixVariable` source | vulnerable | ✅ |
 | `optional-transfer-sqli` | SQL injection (CWE-89) | through `Optional` (transfer) | vulnerable | ✅ |
 | `completablefuture-transfer-sqli` | SQL injection (CWE-89) | through `CompletableFuture` (transfer) | vulnerable | ✅ |
+| `feign-client-sqli` | SQL injection (CWE-89) | cross-service — `@FeignClient` result | vulnerable | ✅ |
+| `scheduled-job-sqli` | SQL injection (CWE-89) | `@Scheduled` entry → `@Repository` read | vulnerable | ✅ |
+| `transactional-stored-sqli` | SQL injection (CWE-89) | `@Transactional` write-then-read | vulnerable | ✅ |
 
-**27 vulnerable, 3 safe.** Current engine result: **27/27 detected, 0 false positives.**
+**30 vulnerable, 3 safe.** Current engine result: **30/30 detected, 0 false positives.**
 Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
 `@RequestHeader`, `@MatrixVariable`, `MultipartFile`), `@KafkaListener`, JAX-RS
-(`@QueryParam`), and `@Repository` reads (stored / second-order injection). Sinks on
-interface library types (`sendRedirect`, R2DBC `DatabaseClient.sql`, Thymeleaf
-`ITemplateEngine`, `EntityManager`) are matched via Tai-e `call-site-mode`. Framework-
-internal sinks (e.g. a logging facade logging the SQL it received) are filtered out,
-so broad sinks like `Logger.info` do not produce false positives.
+(`@QueryParam`), `@Repository` reads (stored / second-order injection), `@FeignClient`
+results, and `@Scheduled` entry points. Sinks on interface library types
+(`sendRedirect`, R2DBC `DatabaseClient.sql`, Thymeleaf `ITemplateEngine`,
+`EntityManager`) are matched via Tai-e `call-site-mode`. Framework-internal sinks
+(e.g. a logging facade logging the SQL it received) are filtered out, so broad sinks
+like `Logger.info` do not produce false positives.
 
 > Some files are **not** taint cases — they feed the separate pattern-based scanners:
 > - `secrets/HardcodedSecrets.java` → `spring-taint secrets target/classes`
@@ -89,6 +93,9 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── jaxrs/               # JAX-RS @QueryParam source (Quarkus / Jakarta REST)
 ├── storedinjection/     # cross-request stored XSS via a @Repository read
 ├── upload/              # MultipartFile.getOriginalFilename → new File(...)
+├── feign/               # @FeignClient result (downstream service) → SQL
+├── scheduled/           # @Scheduled job → @Repository read → SQL
+├── transactional/       # @Transactional write-then-read → SQL
 ├── jndi/                # user name → InitialContext.lookup
 ├── xxe/                 # user URI → DocumentBuilder.parse
 ├── loginjection/        # user input → Logger.info(String)

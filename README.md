@@ -8,10 +8,10 @@
 > Interprocedural taint analysis for Spring Boot applications, built on [Tai-e](https://github.com/pascal-lab/Tai-e).
 > Detects multi-layer data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
 
-Detects **12 vulnerability classes** across **5 frameworks**, including cross-layer,
-reactive, and cross-request stored injection — **27/27 vulnerable benchmark cases
-with 0 false positives.** Ships as a CLI, a self-contained jar, a Docker image, and
-a GitHub Action with SARIF 2.1 output.
+Detects **12 vulnerability classes** across **6 frameworks**, including cross-layer,
+reactive, cross-service, and cross-request stored injection — **30/30 vulnerable
+benchmark cases with 0 false positives.** Ships as a CLI, a self-contained jar, a
+Docker image, and a GitHub Action with SARIF 2.1 output.
 
 ---
 
@@ -138,17 +138,18 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **30 cases (27 vulnerable, 3 safe)** across SQL and JPQL injection
+The benchmark has **33 cases (30 vulnerable, 3 safe)** across SQL and JPQL injection
 (direct, through-service, four-layer, via-Kafka, reactive R2DBC), reflected,
 conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE,
 template injection (SSTI), log injection, path traversal, command injection, and
 open redirect — with sources from Spring (`@RequestParam`, `@PathVariable`,
 `@RequestBody`, `@RequestHeader`, `@MatrixVariable`, `MultipartFile`),
-`@KafkaListener`, JAX-RS (`@QueryParam`), and `@Repository` reads, plus taint
+`@KafkaListener`, JAX-RS (`@QueryParam`), `@Repository` reads, **`@FeignClient`
+results, `@Scheduled` jobs and `@Transactional` write-then-read**, plus taint
 flowing through `Optional` / `CompletableFuture` wrappers. Ground truth is
 in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **27/27 vulnerable cases detected, 0 false positives** on
+Current engine result: **30/30 vulnerable cases detected, 0 false positives** on
 the 3 safe cases. Full table: [benchmark README](spring-taint-benchmark/README.md).
 Per-rule reference: [docs/rules.md](docs/rules.md).
 
@@ -325,6 +326,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Robustness pass: JNDI / XXE / log / template / JPQL sinks, file-upload and `@MatrixVariable` sources, `Optional` / `CompletableFuture` taint transfers, framework-internal sink filtering
 - [x] Configuration & misconfiguration audits: `config` (insecure `application.yml`/`.properties`) and `misconfig` (CSRF/clickjacking disabled, CORS `*`, insecure cookies, sensitive data logged)
 - [x] Adoption: per-finding confidence score (console + SARIF), `scan --diff <ref>` for fast pull-request scans, inline `// spring-taint: suppress` comments (`--src` / `suppressions`), and `validate-config` to catch typo'd custom rules
+- [x] Advanced sources: `@FeignClient` results (cross-service), `@Scheduled` jobs as entry points, and `@Transactional` write-then-read stored injection
 
 ---
 

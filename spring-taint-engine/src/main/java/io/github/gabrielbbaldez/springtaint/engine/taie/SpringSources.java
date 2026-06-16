@@ -41,6 +41,15 @@ final class SpringSources {
     static final Set<String> METHOD_ANNOTATIONS = Set.of(
             "org.springframework.kafka.annotation.KafkaListener");
 
+    /**
+     * Annotations that make a method an analysis entry point without tainting its
+     * parameters. {@code @Scheduled} jobs run with no request input, but they read
+     * external data (files, queues, downstream services, persisted rows) inside the
+     * body — analysing the body lets those internal sources flow to sinks.
+     */
+    static final Set<String> ENTRY_ONLY_ANNOTATIONS = Set.of(
+            "org.springframework.scheduling.annotation.Scheduled");
+
     private SpringSources() {
     }
 
@@ -56,9 +65,16 @@ final class SpringSources {
         return result;
     }
 
-    /** Whether {@code m} is a Spring entry point (has at least one tainted parameter). */
+    /**
+     * Whether {@code m} is a Spring entry point: it has at least one tainted
+     * parameter, or it carries an entry-only annotation (e.g. {@code @Scheduled}).
+     */
     static boolean isEntry(JMethod m) {
-        return !m.isAbstract() && !taintedParams(m).isEmpty();
+        if (m.isAbstract()) {
+            return false;
+        }
+        return !taintedParams(m).isEmpty()
+                || ENTRY_ONLY_ANNOTATIONS.stream().anyMatch(m::hasAnnotation);
     }
 
     private static boolean hasAnyParamAnnotation(JMethod m, int i) {

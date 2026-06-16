@@ -19,6 +19,8 @@ External input is taint. Recognized entry points:
 | File upload | `MultipartFile.getOriginalFilename/getInputStream/getContentType` |
 | Batch | `ItemReader.read` (external CSV/XML/DB data) |
 | Persistence | `@Repository` read methods returning `String` (`find*`/`get*`/`read*`/...) |
+| Microservices | `@FeignClient` methods returning `String` (data from a downstream service) |
+| Scheduled | `@Scheduled` methods are analysis entry points (no request input, but they read external/persisted data internally) |
 
 **Stored / second-order injection.** Data returned by a `@Repository` read method
 is treated as untrusted, because an earlier request may have stored attacker input.
@@ -26,6 +28,14 @@ This catches cross-request flows (e.g. stored XSS: saved in one request, rendere
 another) that same-request analyzers miss. It is intentionally conservative — any
 `@Repository` `String` read that reaches a sink is reported — so it trades some
 precision for recall on second-order flows.
+
+The same `String`-only model treats **`@FeignClient` results** as untrusted
+(microservice data crossing a service boundary) and covers **`@Transactional`**
+write-then-read flows (input persisted and read back in one transaction). Because
+**`@Scheduled`** jobs are entry points, these internal sources are analysed even
+though such methods take no request input. `String`-only keeps all three precise;
+propagating taint through entity/DTO getters (e.g. a Feign `UserDto.getName()`)
+would broaden recall at the cost of precision and is intentionally not done.
 
 ---
 

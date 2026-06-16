@@ -9,7 +9,7 @@ import picocli.CommandLine.Command;
 @Command(
         name = "spring-taint",
         mixinStandardHelpOptions = true,
-        version = "spring-taint 0.9.0",
+        version = "spring-taint 0.10.0",
         description = "Interprocedural taint analysis for Spring Boot, built on Tai-e.",
         subcommands = {ScanCommand.class, SecretsCommand.class, ConfigCommand.class,
                 MisconfigCommand.class, ValidateConfigCommand.class, SuppressionsCommand.class,
