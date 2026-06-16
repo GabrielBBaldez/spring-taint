@@ -5,6 +5,7 @@ import pascal.taie.analysis.pta.PointerAnalysisResult;
 import pascal.taie.ir.IR;
 import pascal.taie.ir.stmt.Invoke;
 import pascal.taie.ir.stmt.Stmt;
+import pascal.taie.language.classes.JClass;
 import pascal.taie.language.classes.JMethod;
 
 import java.util.ArrayDeque;
@@ -62,6 +63,18 @@ public final class TaintFlowExtractor {
             // common runtime libraries that may re-host a sink internally
             "reactor.", "io.netty.", "com.fasterxml.", "com.zaxxer.");
 
+    /**
+     * The outer class's simple name, used to build a {@code .java} file name. Inner and
+     * anonymous classes ({@code Foo$1}, {@code Foo$Bar}) live in {@code Foo.java}, so the
+     * {@code $...} suffix is stripped — otherwise source lookups (suppression, near-miss,
+     * autofix) would miss findings inside nested classes.
+     */
+    private static String outerSimpleName(JClass clazz) {
+        String simple = clazz.getSimpleName();
+        int dollar = simple.indexOf('$');
+        return dollar >= 0 ? simple.substring(0, dollar) : simple;
+    }
+
     private static boolean isFrameworkClass(String fqn) {
         for (String prefix : FRAMEWORK_PREFIXES) {
             if (fqn.startsWith(prefix)) {
@@ -107,15 +120,15 @@ public final class TaintFlowExtractor {
 
             List<Hop> trace = new ArrayList<>();
             for (JMethod method : findCallPath(callGraph, sourceMethod, sinkContainer)) {
-                trace.add(new Hop(method.getDeclaringClass().getSimpleName(),
+                trace.add(new Hop(outerSimpleName(method.getDeclaringClass()),
                         method.getName(), firstLine(method)));
             }
 
             out.add(new ExtractedFlow(
-                    sourceMethod.getDeclaringClass().getSimpleName(),
+                    outerSimpleName(sourceMethod.getDeclaringClass()),
                     sourceMethod.getName(),
                     firstLine(sourceMethod),
-                    sinkContainer.getDeclaringClass().getSimpleName(),
+                    outerSimpleName(sinkContainer.getDeclaringClass()),
                     sinkCall.getLineNumber(),
                     sinkMethod.getDeclaringClass().getName(),
                     sinkMethod.getName(),

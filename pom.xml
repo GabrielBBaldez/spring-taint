@@ -6,7 +6,7 @@
 
     <groupId>io.github.gabrielbbaldez</groupId>
     <artifactId>spring-taint-parent</artifactId>
-    <version>0.12.0</version>
+    <version>0.12.1</version>
     <packaging>pom</packaging>
 
     <name>Spring Taint Analyzer (parent)</name>

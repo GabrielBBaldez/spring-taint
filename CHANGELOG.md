@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.12.1] - 2026-06-16
+
+### Fixed
+Correctness fixes from an internal code review (edge cases the single-package
+benchmark did not exercise, but real multi-package projects would):
+- **Inner/anonymous classes** — flow locations used `Foo$1.java`, which does not
+  exist, so suppression, near-miss and autofix silently skipped findings inside
+  nested classes. The `$…` suffix is now stripped.
+- **Autofix could rewrite the wrong file** when two classes share a simple name in
+  different packages; ambiguous file names are now skipped. The variable lookup is
+  also scoped to the sink's own method (it could previously pick a same-named
+  variable from another method).
+- **`misconfig` false positive** — a sensitive getter used for a non-logging purpose
+  (e.g. `encoder.matches(input, user.getPassword())`) no longer taints a later,
+  unrelated log call.
+- **Near-miss false positive** — an HTML-escaped variable in one method no longer
+  triggers a wrong-context finding on a same-named variable in another method.
+- **Secrets** — `@Value` defaults that are themselves references/SpEL
+  (`${…}`, `#{…}`) are no longer flagged as literal secrets.
+- `validate-config` now closes its `URLClassLoader` (releases jar handles on Windows).
+- CI now asserts the benchmark detects exactly 33 findings, so a detection regression
+  or new false positive fails the build.
+
 ## [0.12.0] - 2026-06-16
 
 ### Added
@@ -158,6 +181,7 @@ All notable changes to this project are documented here. The format is based on
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.12.1]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.1
 [0.12.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.0
 [0.11.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.11.0
 [0.10.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.10.0

@@ -26,14 +26,18 @@ jobs:
           mvn -B -ntp -pl spring-taint-benchmark dependency:build-classpath
           -DincludeScope=test -Dmdep.outputFile=bench-cp.txt
 
-      - name: Scan the benchmark (dogfooding)
-        # The benchmark is intentionally vulnerable, so a non-zero exit is expected.
-        continue-on-error: true
-        run: >
-          java -Xmx4g -jar spring-taint-engine/target/spring-taint-all.jar scan
-          spring-taint-benchmark/target/classes
-          --libs "$(cat spring-taint-benchmark/bench-cp.txt)"
-          --output spring-taint.sarif
+      - name: Scan the benchmark (dogfooding + regression gate)
+        # The benchmark is intentionally vulnerable, so the scan exits non-zero; the
+        # step instead asserts the expected number of findings, so a detection
+        # regression (or a new false positive) fails CI.
+        run: |
+          java -Xmx4g -jar spring-taint-engine/target/spring-taint-all.jar scan \
+            spring-taint-benchmark/target/classes \
+            --libs "$(cat spring-taint-benchmark/bench-cp.txt)" \
+            --output spring-taint.sarif | tee scan.out || true
+          count=$(grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\] ' scan.out)
+          echo "Detected $count findings (expected 33)."
+          test "$count" -eq 33
 
       - name: Upload SARIF
         if: always()

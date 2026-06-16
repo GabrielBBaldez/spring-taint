@@ -146,8 +146,8 @@ public final class SecretScanner {
         }
         String prop = expr.substring(2, colon);
         String def = expr.substring(colon + 1, expr.endsWith("}") ? expr.length() - 1 : expr.length());
-        if (def.isBlank()) {
-            return;
+        if (def.isBlank() || def.startsWith("${") || def.startsWith("#{") || def.startsWith("@")) {
+            return;   // the default is itself an externalized reference / SpEL, not a literal
         }
         boolean valueHit = matchValue(def) != null;
         if (valueHit || SECRET_NAME.matcher(prop).find()) {

@@ -29,6 +29,18 @@ public final class ConfigValidator {
     public Report validate(TaintConfig config, List<URL> classpath) {
         URLClassLoader loader = new URLClassLoader(
                 classpath.toArray(URL[]::new), getClass().getClassLoader());
+        try {
+            return validate(config, loader);
+        } finally {
+            try {
+                loader.close();   // release jar file handles (important on Windows)
+            } catch (java.io.IOException ignored) {
+                // best effort
+            }
+        }
+    }
+
+    private Report validate(TaintConfig config, URLClassLoader loader) {
         Set<String> signatures = collectSignatures(config);
         List<Issue> issues = new ArrayList<>();
         int resolved = 0;

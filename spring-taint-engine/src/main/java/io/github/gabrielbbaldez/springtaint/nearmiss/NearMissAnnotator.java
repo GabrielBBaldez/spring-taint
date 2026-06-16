@@ -118,6 +118,11 @@ public final class NearMissAnnotator {
             List<String> lines = entry.getValue();
             Map<String, Integer> escaped = new HashMap<>();
             for (int i = 0; i < lines.size(); i++) {
+                // A method's closing brace ends the scope of its locals; don't carry an
+                // escaped variable name into another method that reuses the same name.
+                if (lines.get(i).strip().equals("}")) {
+                    escaped.clear();
+                }
                 Matcher assign = ESCAPE_ASSIGN.matcher(lines.get(i));
                 if (assign.find()) {
                     escaped.put(assign.group(1), i + 1);

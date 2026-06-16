@@ -159,12 +159,12 @@ public final class MisconfigScanner {
                             // LocalVariableTable (which carries variable names) has been visited.
                             logSites.add(new LogSite(line, sensitiveByValue, new ArrayList<>(recentAloads)));
                         }
-                        // A sensitive getter feeds the value being built (e.g. log("…" + user.getPassword())).
-                        if (SENSITIVE.matcher(mName).find() && (mName.startsWith("get") || mName.startsWith("is"))) {
-                            sensitiveByValue = true;
-                        } else if (isLog) {
-                            sensitiveByValue = false;
-                        }
+                        // This call consumes the current expression's value. It carries a sensitive
+                        // value forward only if it is itself a sensitive getter (e.g. getPassword());
+                        // otherwise the prior sensitive value was consumed here (e.g. by encoder.matches)
+                        // and must not taint a later, unrelated log call.
+                        sensitiveByValue = SENSITIVE.matcher(mName).find()
+                                && (mName.startsWith("get") || mName.startsWith("is"));
                         // Arguments are consumed by the call; start a fresh window.
                         recentAloads.clear();
                         lastPushedFalse = false;

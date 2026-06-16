@@ -9,6 +9,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter;
 import io.github.gabrielbbaldez.springtaint.report.Finding;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +79,7 @@ public final class AutofixGenerator {
             return Optional.empty();
         }
         Expression queryArg = sink.getArgument(0);
-        BinaryExpr concat = resolveConcat(queryArg);
+        BinaryExpr concat = resolveConcat(queryArg, sink);
         if (concat == null) {
             return Optional.empty();
         }
@@ -124,15 +126,20 @@ public final class AutofixGenerator {
         return best;
     }
 
-    /** The concatenation behind the query argument, directly or via a local variable. */
-    private static BinaryExpr resolveConcat(Expression arg) {
+    /**
+     * The concatenation behind the query argument, directly or via a local variable.
+     * The variable lookup is scoped to the sink's own method, so a same-named variable
+     * in another method cannot be picked by mistake.
+     */
+    private static BinaryExpr resolveConcat(Expression arg, MethodCallExpr sink) {
         if (arg instanceof BinaryExpr be && be.getOperator() == BinaryExpr.Operator.PLUS) {
             return be;
         }
         if (arg instanceof NameExpr name) {
-            return arg.findCompilationUnit()
-                    .map(cu -> cu.findAll(VariableDeclarator.class))
-                    .orElse(List.of()).stream()
+            List<VariableDeclarator> scope = sink.findAncestor(MethodDeclaration.class)
+                    .map(m -> m.findAll(VariableDeclarator.class))
+                    .orElse(List.of());
+            return scope.stream()
                     .filter(v -> v.getNameAsString().equals(name.getNameAsString()))
                     .map(v -> v.getInitializer().orElse(null))
                     .filter(init -> init instanceof BinaryExpr be
@@ -201,10 +208,10 @@ public final class AutofixGenerator {
         }
         StringBuilder out = new StringBuilder();
         for (int i = start; i <= endA; i++) {
-            out.append("  - ").append(a[i].strip()).append('\n');
+            out.append("  - ").append(a[i].stripTrailing()).append('\n');   // keep indentation, drop trailing CR
         }
         for (int i = start; i <= endB; i++) {
-            out.append("  + ").append(b[i].strip()).append('\n');
+            out.append("  + ").append(b[i].stripTrailing()).append('\n');
         }
         return out.toString();
     }
@@ -216,12 +223,17 @@ public final class AutofixGenerator {
             return out;
         }
         if (Files.isDirectory(srcDir)) {
+            Set<String> ambiguous = new HashSet<>();
             try (Stream<Path> paths = Files.walk(srcDir)) {
                 for (Path p : (Iterable<Path>) paths
                         .filter(f -> f.toString().endsWith(".java"))::iterator) {
-                    out.putIfAbsent(p.getFileName().toString(), p);
+                    String name = p.getFileName().toString();
+                    if (out.putIfAbsent(name, p) != null) {
+                        ambiguous.add(name);   // same file name in two packages — can't safely rewrite
+                    }
                 }
             }
+            ambiguous.forEach(out::remove);
         }
         return out;
     }
