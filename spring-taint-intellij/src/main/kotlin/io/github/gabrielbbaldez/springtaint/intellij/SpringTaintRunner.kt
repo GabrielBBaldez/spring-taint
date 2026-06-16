@@ -71,6 +71,26 @@ object SpringTaintRunner {
         }
     }
 
+    /** Applies every generated fix to the source files via the engine's --fix, returns a message. */
+    fun applyFixes(project: Project): String {
+        val target = resolveTarget(project) ?: return "No compiled module found."
+        val src = target.srcRoot ?: return "No source root found to apply fixes to."
+        val java = findJavaLE17() ?: return "Needs a JDK 17 SDK to run the analyzer."
+        val jar = extractJar()
+        val cmd = GeneralCommandLine(java).withParameters(
+            buildList {
+                add("-jar"); add(jar.toString())
+                add("scan"); add(target.output)
+                if (target.libs.isNotEmpty()) { add("--libs"); add(target.libs) }
+                add("--src"); add(src)
+                add("--fix"); add("--fix-confidence"); add("all")
+            },
+        )
+        val ran = runCatching { ExecUtil.execAndGetOutput(cmd) }
+        return if (ran.isSuccess) "Applied the suggested fixes -- review the changed files."
+        else "Failed to apply fixes: ${ran.exceptionOrNull()?.message}"
+    }
+
     private data class Target(val moduleName: String, val output: String, val libs: String, val srcRoot: String?)
 
     /** Resolves the first built module's output dir, dependency classpath and main source root. */
