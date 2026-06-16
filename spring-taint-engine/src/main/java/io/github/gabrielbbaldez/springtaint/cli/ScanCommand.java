@@ -82,6 +82,11 @@ public final class ScanCommand implements Callable<Integer> {
             description = "With --fix: 'high' (default; only short single-method flows) or 'all'.")
     private String fixConfidence = "high";
 
+    @Option(names = "--baseline", paramLabel = "FILE",
+            description = "Accept existing findings: if FILE is absent, record the current findings; "
+                    + "otherwise report (and gate on) only findings not in it.")
+    private Path baseline;
+
     @Override
     public Integer call() throws Exception {
         if (target == null || !Files.exists(target)) {
@@ -106,6 +111,10 @@ public final class ScanCommand implements Callable<Integer> {
             findings = applySuppressions(findings, src);
             findings.sort(java.util.Comparator
                     .comparing(Finding::ruleId).thenComparing(Finding::file).thenComparingInt(Finding::line));
+        }
+
+        if (baseline != null) {
+            findings = applyBaseline(findings, baseline);
         }
 
         new ConsoleReporter(System.out, verbose).report(findings);
@@ -258,6 +267,34 @@ public final class ScanCommand implements Callable<Integer> {
             System.out.println("Run with --fix to apply the high-confidence fixes "
                     + "(--fix-confidence all to apply every suggestion).");
         }
+    }
+
+    /**
+     * On the first run (no baseline file) records the current findings and reports
+     * nothing new; on later runs returns only findings absent from the baseline, so a
+     * team can adopt the tool on a legacy codebase and gate CI on new issues only.
+     */
+    private List<Finding> applyBaseline(List<Finding> findings, Path baselineFile) throws IOException {
+        if (!Files.exists(baselineFile)) {
+            List<String> prints = findings.stream().map(ScanCommand::fingerprint).distinct().sorted().toList();
+            Files.write(baselineFile, prints);
+            System.out.printf("Baseline written: %d finding(s) recorded in %s. "
+                    + "Future runs report only new findings.%n", prints.size(), baselineFile);
+            return List.of();
+        }
+        Set<String> accepted = new java.util.HashSet<>(Files.readAllLines(baselineFile));
+        List<Finding> fresh = findings.stream()
+                .filter(f -> !accepted.contains(fingerprint(f)))
+                .collect(Collectors.toList());
+        System.out.printf("Baseline: %d new finding(s), %d baselined.%n",
+                fresh.size(), findings.size() - fresh.size());
+        return fresh;
+    }
+
+    /** A line-independent identity for a finding, so a baseline survives code shifting around. */
+    private static String fingerprint(Finding f) {
+        String sink = f.sink() != null ? f.sink().description() : f.message();
+        return f.ruleId() + "\t" + f.file() + "\t" + sink;
     }
 
     private static List<Finding> filter(List<Finding> findings, List<String> severities) {

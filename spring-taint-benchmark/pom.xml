@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.gabrielbbaldez</groupId>
         <artifactId>spring-taint-parent</artifactId>
-        <version>0.13.0</version>
+        <version>0.14.0</version>
     </parent>
 
     <artifactId>spring-taint-benchmark</artifactId>

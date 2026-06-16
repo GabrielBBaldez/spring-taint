@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] - 2026-06-16
+
+### Added
+- **Autofix now covers XSS** in addition to SQL injection: it wraps the interpolated
+  values written to the response in `HtmlUtils.htmlEscape(...)` (adding the import).
+  Verified end-to-end — applying the SQL + XSS fixes compiles cleanly and drops the
+  benchmark's xss findings from 12 to 4 (the rest are cross-method/non-concat sinks).
+- **Baseline mode** — `scan --baseline <file>` records the current findings on the
+  first run, then on later runs reports (and gates CI on) only findings *not* in the
+  baseline. Lets a team adopt the tool on a legacy codebase and fail the build only on
+  new issues. Fingerprints are line-independent, so they survive code moving around.
+
 ## [0.13.0] - 2026-06-16
 
 ### Added
@@ -196,6 +208,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.14.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.14.0
 [0.13.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.13.0
 [0.12.1]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.1
 [0.12.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.12.0

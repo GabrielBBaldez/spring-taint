@@ -257,10 +257,12 @@ the rule to suppress any finding on the line. `scan --src <dir>` then drops matc
 findings (and reports how many). `spring-taint suppressions <dir>` lists every
 directive so they can be audited.
 
-## Autofix (parameterized queries)
+## Autofix
 
 For SQL-injection findings, `scan --src <dir> --suggest-fixes` generates the
-parameterized-query fix and shows it as a diff:
+parameterized-query fix and shows it as a diff; for XSS findings it wraps the
+interpolated value written to the response in `HtmlUtils.htmlEscape(...)` (adding the
+import). Example (SQL):
 
 ```
 [suggested fix] sql-injection - UserRepository.java:34 (low confidence)

@@ -98,9 +98,9 @@ interprocedural taint:
 | JPQL / template / JNDI / XXE injection | ✅ | ❌ | ❌ |
 | Spring Security & `application.yml` misconfig | ✅ | ❌ | ❌ |
 | Near-miss sanitizer detection (wrong/insufficient sanitization) | ✅ | ❌ | ❌ |
-| Autofix — applies a parameterized-query patch | ✅ | ❌ | ❌ |
+| Autofix — applies the fix (parameterized query / output escaping) | ✅ | ❌ | ❌ |
 | Per-finding confidence score | ✅ | ❌ | ❌ |
-| Diff mode for pull requests | ✅ | ❌ | ✅ |
+| Diff mode + baseline for pull requests | ✅ | ❌ | partial |
 | SARIF 2.1 output | ✅ | ✅ | ✅ |
 | Free / open source | ✅ | ✅ | ✅ |
 
@@ -223,6 +223,9 @@ spring-taint scan target/classes --libs "…" --src src/main/java --suggest-fixe
 
 # Apply the high-confidence fixes to the source
 spring-taint scan target/classes --libs "…" --src src/main/java --fix
+
+# Adopt on a legacy codebase: record today's findings, then fail only on NEW ones
+spring-taint scan target/classes --libs "…" --baseline spring-taint-baseline.txt
 ```
 
 Example output (every taint finding carries a confidence score):
@@ -372,6 +375,7 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] Near-miss sanitizers (`--src`): flags insufficient (quote-stripping), blacklist, discarded-result, and wrong-context sanitization — the "I'm sure this is safe" class of bug
 - [x] Autofix (`--suggest-fixes` / `--fix`): rewrites a concatenated SQL query into a parameterized one; verified end-to-end (applying the fixes drops the benchmark's SQL findings 15 → 1 and the patched code compiles)
 - [x] Unit-test suite for the scanners (18 tests, with regression coverage); the bytecode scanners (`secrets`/`misconfig`) read any-JDK class files (ASM 9.7)
+- [x] Autofix covers XSS (wrap in `HtmlUtils.htmlEscape`) as well as SQL; baseline mode (`--baseline`) to adopt on a legacy codebase and gate CI on new findings only
 
 ---
 
