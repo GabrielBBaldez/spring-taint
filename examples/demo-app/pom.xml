@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Intentionally vulnerable (and intentionally safe) demo app for Spring Taint Analyzer.
+  A fuller, more realistic app than the unit benchmark: each category has BOTH a
+  vulnerable endpoint (should be flagged) and a safe one (must NOT be flagged), so it
+  doubles as a true-positive / false-positive showcase. NEVER deploy it.
+
+  Standalone on purpose (not a module of the parent reactor). Build on JDK 17 so the
+  taint engine can read the bytecode.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+    <groupId>io.github.gabrielbbaldez</groupId>
+    <artifactId>spring-taint-demo-app</artifactId>
+    <version>0.0.1</version>
+    <properties>
+        <java.version>17</java.version>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+</project>

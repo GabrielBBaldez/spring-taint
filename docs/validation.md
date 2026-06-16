@@ -126,6 +126,41 @@ java -jar spring-taint-all.jar misconfig target/classes
 java -jar spring-taint-all.jar config   src/main/resources
 ```
 
+## demo-app (true positives and false positives, side by side)
+
+The real apps above each isolate one property — petclinic measures precision, the
+vulnerable apps measure recall. [`examples/demo-app`](../examples/demo-app) puts both
+in one run, and covers the two categories the real-app set did not have a clean target
+for: **reflected XSS** and **command injection**, plus a **cross-layer SQL injection**.
+
+Each category ships a vulnerable endpoint and a safe sibling, so the same scan proves a
+true positive *and* a false-positive check at once:
+
+| Category | Vulnerable (should flag) | Safe (must not flag) | Why safe |
+|---|---|---|---|
+| XSS | `/greet` | `/greet-safe` | `HtmlUtils.htmlEscape` before the writer |
+| Command injection | `/ping` | `/uptime` | constant command, no request data |
+| SQL injection | `/accounts` -> `AccountService` | `/accounts-safe` | bound `?` parameter, not concatenation |
+
+Result — exactly three findings, one per vulnerable endpoint, nothing on the siblings:
+
+```
+[CRITICAL] command-injection (confidence: 99%)
+  Source:  OpsController.java:16 - source: ping() - tainted parameter
+  Sink:    OpsController.java:16 - sink: exec()
+[CRITICAL] sql-injection (confidence: 99%)
+  Source:  AccountController.java:21 - source: delete() - tainted parameter
+  Sink:    AccountService.java:18 - sink: update()
+[HIGH] xss (confidence: 90%)
+  Source:  GreetingController.java:18 - source: greet() - tainted parameter
+  Sink:    GreetingController.java:18 - sink: write()
+3 finding(s).
+```
+
+The `sql-injection` flow crosses from `AccountController` into `AccountService`, so it
+also exercises the interprocedural path. Build and scan instructions are in the demo
+app's [README](../examples/demo-app/README.md).
+
 ## Limitations surfaced by real-world testing
 
 Running on real apps also exposes where the engine stops — recorded honestly:
