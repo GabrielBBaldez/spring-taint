@@ -1,0 +1,962 @@
+{
+  "$schema" : "https://json.schemastore.org/sarif-2.1.0.json",
+  "version" : "2.1.0",
+  "runs" : [ {
+    "tool" : {
+      "driver" : {
+        "name" : "Spring Taint Analyzer",
+        "version" : "0.1.0",
+        "informationUri" : "https://github.com/GabrielBBaldez/spring-taint",
+        "rules" : [ {
+          "id" : "command-injection",
+          "shortDescription" : {
+            "text" : "command-injection"
+          }
+        }, {
+          "id" : "open-redirect",
+          "shortDescription" : {
+            "text" : "open-redirect"
+          }
+        }, {
+          "id" : "path-traversal",
+          "shortDescription" : {
+            "text" : "path-traversal"
+          }
+        }, {
+          "id" : "spel-injection",
+          "shortDescription" : {
+            "text" : "spel-injection"
+          }
+        }, {
+          "id" : "sql-injection",
+          "shortDescription" : {
+            "text" : "sql-injection"
+          }
+        }, {
+          "id" : "ssrf",
+          "shortDescription" : {
+            "text" : "ssrf"
+          }
+        }, {
+          "id" : "xss",
+          "shortDescription" : {
+            "text" : "xss"
+          }
+        } ]
+      }
+    },
+    "results" : [ {
+      "ruleId" : "command-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches exec (command-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "CommandInjectionController.java"
+          },
+          "region" : {
+            "startLine" : 21
+          }
+        },
+        "message" : {
+          "text" : "sink: exec()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "CommandInjectionController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "source: ping() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "CommandInjectionController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "sink: exec()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "open-redirect",
+      "level" : "warning",
+      "message" : {
+        "text" : "Tainted data reaches sendRedirect (open-redirect)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "OpenRedirectController.java"
+          },
+          "region" : {
+            "startLine" : 23
+          }
+        },
+        "message" : {
+          "text" : "sink: sendRedirect()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "OpenRedirectController.java"
+                },
+                "region" : {
+                  "startLine" : 23
+                }
+              },
+              "message" : {
+                "text" : "source: go() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "OpenRedirectController.java"
+                },
+                "region" : {
+                  "startLine" : 23
+                }
+              },
+              "message" : {
+                "text" : "sink: sendRedirect()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "path-traversal",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches <init> (path-traversal)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "PathTraversalController.java"
+          },
+          "region" : {
+            "startLine" : 22
+          }
+        },
+        "message" : {
+          "text" : "sink: <init>()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "PathTraversalController.java"
+                },
+                "region" : {
+                  "startLine" : 22
+                }
+              },
+              "message" : {
+                "text" : "source: download() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "PathTraversalController.java"
+                },
+                "region" : {
+                  "startLine" : 22
+                }
+              },
+              "message" : {
+                "text" : "sink: <init>()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "spel-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches parseExpression (spel-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "SpelInjectionController.java"
+          },
+          "region" : {
+            "startLine" : 21
+          }
+        },
+        "message" : {
+          "text" : "sink: parseExpression()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SpelInjectionController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "source: eval() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SpelInjectionController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "sink: parseExpression()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches update (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "JaxRsSqliController.java"
+          },
+          "region" : {
+            "startLine" : 26
+          }
+        },
+        "message" : {
+          "text" : "sink: update()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "JaxRsSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 26
+                }
+              },
+              "message" : {
+                "text" : "source: delete() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "JaxRsSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 26
+                }
+              },
+              "message" : {
+                "text" : "sink: update()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches execute (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "KafkaSqliListener.java"
+          },
+          "region" : {
+            "startLine" : 26
+          }
+        },
+        "message" : {
+          "text" : "sink: execute()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "KafkaSqliListener.java"
+                },
+                "region" : {
+                  "startLine" : 25
+                }
+              },
+              "message" : {
+                "text" : "source: onMessage() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "KafkaSqliListener.java"
+                },
+                "region" : {
+                  "startLine" : 26
+                }
+              },
+              "message" : {
+                "text" : "sink: execute()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches update (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "PathVariableSqliController.java"
+          },
+          "region" : {
+            "startLine" : 24
+          }
+        },
+        "message" : {
+          "text" : "sink: update()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "PathVariableSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 24
+                }
+              },
+              "message" : {
+                "text" : "source: delete() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "PathVariableSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 24
+                }
+              },
+              "message" : {
+                "text" : "sink: update()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches update (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "RequestBodySqliController.java"
+          },
+          "region" : {
+            "startLine" : 24
+          }
+        },
+        "message" : {
+          "text" : "sink: update()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "RequestBodySqliController.java"
+                },
+                "region" : {
+                  "startLine" : 24
+                }
+              },
+              "message" : {
+                "text" : "source: create() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "RequestBodySqliController.java"
+                },
+                "region" : {
+                  "startLine" : 24
+                }
+              },
+              "message" : {
+                "text" : "sink: update()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches update (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "SqliDirectController.java"
+          },
+          "region" : {
+            "startLine" : 28
+          }
+        },
+        "message" : {
+          "text" : "sink: update()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SqliDirectController.java"
+                },
+                "region" : {
+                  "startLine" : 27
+                }
+              },
+              "message" : {
+                "text" : "source: delete() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SqliDirectController.java"
+                },
+                "region" : {
+                  "startLine" : 28
+                }
+              },
+              "message" : {
+                "text" : "sink: update()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches query (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "ThreeLayerRepository.java"
+          },
+          "region" : {
+            "startLine" : 23
+          }
+        },
+        "message" : {
+          "text" : "sink: query()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ThreeLayerController.java"
+                },
+                "region" : {
+                  "startLine" : 27
+                }
+              },
+              "message" : {
+                "text" : "source: search() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ThreeLayerService.java"
+                },
+                "region" : {
+                  "startLine" : 20
+                }
+              },
+              "message" : {
+                "text" : "via ThreeLayerService.search()"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ThreeLayerRepository.java"
+                },
+                "region" : {
+                  "startLine" : 23
+                }
+              },
+              "message" : {
+                "text" : "sink: query()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches query (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "UserRepository.java"
+          },
+          "region" : {
+            "startLine" : 27
+          }
+        },
+        "message" : {
+          "text" : "sink: query()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "UserController.java"
+                },
+                "region" : {
+                  "startLine" : 28
+                }
+              },
+              "message" : {
+                "text" : "source: search() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "UserService.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "via UserService.search()"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "UserRepository.java"
+                },
+                "region" : {
+                  "startLine" : 27
+                }
+              },
+              "message" : {
+                "text" : "sink: query()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "sql-injection",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches sql (sql-injection)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "WebFluxSqliController.java"
+          },
+          "region" : {
+            "startLine" : 29
+          }
+        },
+        "message" : {
+          "text" : "sink: sql()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "WebFluxSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 28
+                }
+              },
+              "message" : {
+                "text" : "source: search() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "WebFluxSqliController.java"
+                },
+                "region" : {
+                  "startLine" : 29
+                }
+              },
+              "message" : {
+                "text" : "sink: sql()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "ssrf",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches getForObject (ssrf)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "SsrfRestTemplateController.java"
+          },
+          "region" : {
+            "startLine" : 25
+          }
+        },
+        "message" : {
+          "text" : "sink: getForObject()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SsrfRestTemplateController.java"
+                },
+                "region" : {
+                  "startLine" : 25
+                }
+              },
+              "message" : {
+                "text" : "source: fetch() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "SsrfRestTemplateController.java"
+                },
+                "region" : {
+                  "startLine" : 25
+                }
+              },
+              "message" : {
+                "text" : "sink: getForObject()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "xss",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches write (xss)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "ConditionalSanitizerController.java"
+          },
+          "region" : {
+            "startLine" : 26
+          }
+        },
+        "message" : {
+          "text" : "sink: write()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ConditionalSanitizerController.java"
+                },
+                "region" : {
+                  "startLine" : 25
+                }
+              },
+              "message" : {
+                "text" : "source: process() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ConditionalSanitizerController.java"
+                },
+                "region" : {
+                  "startLine" : 26
+                }
+              },
+              "message" : {
+                "text" : "sink: write()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "xss",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches write (xss)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "ReflectedXssController.java"
+          },
+          "region" : {
+            "startLine" : 21
+          }
+        },
+        "message" : {
+          "text" : "sink: write()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ReflectedXssController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "source: greet() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "ReflectedXssController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "sink: write()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "xss",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches write (xss)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "RequestHeaderXssController.java"
+          },
+          "region" : {
+            "startLine" : 21
+          }
+        },
+        "message" : {
+          "text" : "sink: write()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "RequestHeaderXssController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "source: echo() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "RequestHeaderXssController.java"
+                },
+                "region" : {
+                  "startLine" : 21
+                }
+              },
+              "message" : {
+                "text" : "sink: write()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    }, {
+      "ruleId" : "xss",
+      "level" : "error",
+      "message" : {
+        "text" : "Tainted data reaches write (xss)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "StoredXssReadController.java"
+          },
+          "region" : {
+            "startLine" : 30
+          }
+        },
+        "message" : {
+          "text" : "sink: write()"
+        }
+      } ],
+      "codeFlows" : [ {
+        "threadFlows" : [ {
+          "locations" : [ {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "StoredXssReadController.java"
+                },
+                "region" : {
+                  "startLine" : 29
+                }
+              },
+              "message" : {
+                "text" : "source: read() - tainted parameter"
+              }
+            }
+          }, {
+            "location" : {
+              "physicalLocation" : {
+                "artifactLocation" : {
+                  "uri" : "StoredXssReadController.java"
+                },
+                "region" : {
+                  "startLine" : 30
+                }
+              },
+              "message" : {
+                "text" : "sink: write()"
+              }
+            }
+          } ]
+        } ]
+      } ]
+    } ]
+  } ]
+}

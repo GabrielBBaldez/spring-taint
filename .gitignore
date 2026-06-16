@@ -11,6 +11,8 @@ dependency-reduced-pom.xml
 *.class
 output/
 *.sarif
+# …but keep the dashboard's bundled sample report
+!dashboard/public/sample.sarif
 
 # IDEs
 .idea/

@@ -271,6 +271,19 @@ benchmark on every push — see [`.github/workflows/ci.yml`](.github/workflows/c
 
 ---
 
+## Dashboard
+
+A web console (React + Vite + TypeScript) visualizes the SARIF output: severity
+breakdown, findings by rule, and the full **source → sink taint flow** for each
+finding. Drop a `.sarif` file to load your own report. See
+[`dashboard/`](dashboard/).
+
+```bash
+cd dashboard && npm install && npm run dev   # → http://localhost:4321
+```
+
+---
+
 ## Status
 
 - [x] Scope and positioning
