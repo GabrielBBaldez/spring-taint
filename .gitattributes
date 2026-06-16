@@ -1,0 +1,8 @@
+# Shell scripts and the Docker entrypoint must keep LF endings so they run
+# correctly inside Linux containers, even when authored on Windows.
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+
+# Normalize everything else to LF in the repository.
+* text=auto eol=lf
