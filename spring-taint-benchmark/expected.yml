@@ -5,86 +5,132 @@
 # measure recall; safe cases measure precision. Sources and sinks are located by
 # the `taint-source:` / `taint-sink:` marker comments in the referenced files.
 #
+# `knownGap: true` marks a real vulnerability the engine does not detect yet,
+# with the reason — so recall is reported honestly.
+#
 # Paths are relative to this module (spring-taint-benchmark/).
 
 benchmark: spring-taint-benchmark
-version: 0.1.0
+version: 0.2.0
 base: src/main/java/io/github/gabrielbbaldez/springtaint/benchmark
 
 cases:
+  # ---------------- SQL injection (CWE-89) ----------------
   - id: sqli-direct
     category: sql-injection
-    cwe: CWE-89
     severity: critical
     expected: true
     crossLayer: false
     sourceFile: sqli/direct/SqliDirectController.java
     sinkFile: sqli/direct/SqliDirectController.java
-    note: "source and sink in the same method; baseline (a same-function analyzer also detects it)"
+    note: "source and sink in the same method; baseline"
 
   - id: sqli-through-service
     category: sql-injection
-    cwe: CWE-89
     severity: critical
     expected: true
     crossLayer: true
     flow: [Controller, Service, Repository]
     sourceFile: sqli/throughservice/UserController.java
     sinkFile: sqli/throughservice/UserRepository.java
-    note: "flagship: taint crosses three layers; a same-function analyzer cannot see it"
+    note: "flagship: taint crosses three layers"
+
+  - id: sqli-three-layers
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: true
+    flow: [Controller, Service, Validator, Repository]
+    sourceFile: sqli/threelayers/ThreeLayerController.java
+    sinkFile: sqli/threelayers/ThreeLayerRepository.java
+    note: "four layers; exercises deeper field-object modelling"
 
   - id: sqli-via-kafka
     category: sql-injection
-    cwe: CWE-89
     severity: critical
     expected: true
     crossLayer: true
     phase: 2
     sourceFile: sqli/viakafka/KafkaSqliListener.java
     sinkFile: sqli/viakafka/KafkaSqliListener.java
-    note: "source is a @KafkaListener payload (no explicit call site); modelled via Tai-e param source"
+    note: "source is a @KafkaListener payload"
 
   - id: sqli-safe-parameterized
     category: sql-injection
-    cwe: CWE-89
     expected: false
     crossLayer: true
     sourceFile: sqli/safe/SafeUserController.java
     sinkFile: sqli/safe/SafeUserRepository.java
-    note: "value bound via NamedParameterJdbcTemplate; must NOT be flagged"
+    note: "NamedParameterJdbcTemplate binding; must NOT be flagged"
 
+  - id: sqli-safe-prepared
+    category: sql-injection
+    expected: false
+    crossLayer: false
+    sourceFile: sqli/safe/PreparedStatementController.java
+    sinkFile: sqli/safe/PreparedStatementController.java
+    note: "bound '?' parameter; must NOT be flagged"
+
+  # ---------------- XSS (CWE-79) ----------------
   - id: xss-reflected
     category: xss
-    cwe: CWE-79
     severity: high
     expected: true
     crossLayer: false
     sourceFile: xss/reflected/ReflectedXssController.java
     sinkFile: xss/reflected/ReflectedXssController.java
-    note: "request parameter written to the response writer without escaping"
+    note: "request parameter written to the response without escaping"
+
+  - id: xss-conditional-sanitizer
+    category: xss
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: conditional/ConditionalSanitizerController.java
+    sinkFile: conditional/ConditionalSanitizerController.java
+    note: "sanitizer applied only on one branch; the other path is vulnerable"
 
   - id: xss-safe-escaped
     category: xss
-    cwe: CWE-79
     expected: false
     crossLayer: false
     sourceFile: xss/safe/SafeXssController.java
     sinkFile: xss/safe/SafeXssController.java
-    note: "value passes through HtmlUtils.htmlEscape; must NOT be flagged"
+    note: "HtmlUtils.htmlEscape; must NOT be flagged"
 
+  # ---------------- SSRF (CWE-918) ----------------
+  - id: ssrf-rest-template
+    category: ssrf
+    severity: high
+    expected: true
+    crossLayer: false
+    sourceFile: ssrf/resttemplate/SsrfRestTemplateController.java
+    sinkFile: ssrf/resttemplate/SsrfRestTemplateController.java
+    note: "user-controlled URL fetched via RestTemplate"
+
+  # ---------------- SpEL injection (CWE-917) ----------------
+  - id: spel-injection
+    category: spel-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: spel/SpelInjectionController.java
+    sinkFile: spel/SpelInjectionController.java
+    note: "user expression parsed and evaluated"
+
+  # ---------------- Path traversal (CWE-22) ----------------
   - id: path-traversal-direct
     category: path-traversal
-    cwe: CWE-22
     severity: high
     expected: true
     crossLayer: false
     sourceFile: pathtraversal/direct/PathTraversalController.java
     sinkFile: pathtraversal/direct/PathTraversalController.java
-    note: "untrusted filename concatenated into a filesystem path (new File)"
+    note: "untrusted filename concatenated into a filesystem path"
 
+  # ---------------- Command injection (CWE-78) ----------------
   - id: cmdi-direct
     category: command-injection
-    cwe: CWE-78
     severity: critical
     expected: true
     crossLayer: false
@@ -92,9 +138,25 @@ cases:
     sinkFile: cmdi/direct/CommandInjectionController.java
     note: "untrusted host concatenated into Runtime.exec"
 
-# Convenience totals (kept in sync by hand for now).
+  # ---------------- Open redirect (CWE-601) ----------------
+  - id: open-redirect
+    category: open-redirect
+    severity: medium
+    expected: true
+    crossLayer: false
+    knownGap: true
+    gap: "sink (sendRedirect) is called on an interface-typed parameter (HttpServletResponse), which has no points-to object under the current entry-point modelling"
+    sourceFile: openredirect/OpenRedirectController.java
+    sinkFile: openredirect/OpenRedirectController.java
+    note: "user-controlled redirect target"
+
+# Totals (kept in sync by hand).
 summary:
-  total: 8
-  expectedVulnerable: 6
-  expectedSafe: 2
-  categories: [sql-injection, xss, path-traversal, command-injection]
+  total: 14
+  expectedVulnerable: 11
+  expectedSafe: 3
+  categories: [sql-injection, xss, ssrf, spel-injection, path-traversal, command-injection, open-redirect]
+  # Current engine results on this benchmark:
+  detectedVulnerable: 10   # all but open-redirect (knownGap)
+  falsePositives: 0
+  knownGaps: [open-redirect]

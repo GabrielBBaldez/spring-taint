@@ -130,20 +130,17 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The current benchmark covers, with documented ground truth in [`expected.yml`](spring-taint-benchmark/expected.yml):
+The benchmark has **14 cases (11 vulnerable, 3 safe)** across SQL injection
+(direct, through-service, four-layer, via-Kafka), reflected & conditional-sanitizer
+XSS, SSRF, SpEL injection, path traversal, command injection, and open redirect,
+with documented ground truth in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-| Case | Category | Crosses layers | Expected |
-|---|---|---|---|
-| `sqli/direct` | SQL Injection | no (baseline) | flagged |
-| `sqli/throughservice` | SQL Injection | yes (Controller→Service→Repository) | flagged |
-| `sqli/viakafka` | SQL Injection | yes (`@KafkaListener` source) | flagged |
-| `sqli/safe` | SQL Injection | yes | **not** flagged (parameterized) |
-| `xss/reflected` | Reflected XSS | yes | flagged |
-| `xss/safe` | XSS | yes | **not** flagged (`HtmlUtils.htmlEscape`) |
-| `pathtraversal/direct` | Path Traversal | yes | flagged |
-| `cmdi/direct` | Command Injection | yes | flagged |
+Current engine result: **10/11 vulnerable cases detected, 0 false positives** on
+the 3 safe cases. The one miss (`open-redirect`) is a documented gap — its sink is
+called on an interface-typed parameter that has no points-to object yet. Full
+table and per-case status: [benchmark README](spring-taint-benchmark/README.md).
 
-Positive cases measure **recall**; safe cases measure **precision**. See the [benchmark README](spring-taint-benchmark/README.md).
+Positive cases measure **recall**; safe cases measure **precision**.
 
 ---
 
@@ -237,7 +234,7 @@ spring-taint scan <classes> --libs <dependency-classpath> --config config/spring
 - [x] Engine: Tai-e IFDS wired end-to-end on the benchmark
 - [x] Spring source layer: annotation → Tai-e param-source generation
 - [x] Functional CLI with SARIF output
-- [x] precision/recall on the current benchmark — **6/6 vulnerable cases detected, 0 false positives** (SQL injection direct / cross-layer through-service / via-Kafka, reflected XSS, path traversal, command injection; safe cases not flagged)
+- [x] precision/recall on the current benchmark — **10/11 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka), reflected & conditional XSS, SSRF, SpEL, path traversal, command injection; open redirect is a documented gap
 - [ ] GitHub Action
 - [ ] Public release v0.1.0
 

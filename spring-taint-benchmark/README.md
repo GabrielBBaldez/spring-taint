@@ -17,18 +17,27 @@ ground truth for the analyzer, in the spirit of FlowDroid's DroidBench.
 
 ## Cases
 
-| id | category | crosses layers | expected |
-|---|---|---|---|
-| `sqli-direct` | SQL injection (CWE-89) | no (baseline) | vulnerable |
-| `sqli-through-service` | SQL injection (CWE-89) | yes — Controller→Service→Repository | vulnerable |
-| `sqli-via-kafka` | SQL injection (CWE-89) | yes — `@KafkaListener` source | vulnerable (Phase 2) |
-| `sqli-safe-parameterized` | SQL injection (CWE-89) | yes | **safe** (parameterized) |
-| `xss-reflected` | Reflected XSS (CWE-79) | no | vulnerable |
-| `xss-safe-escaped` | XSS (CWE-79) | no | **safe** (`HtmlUtils.htmlEscape`) |
-| `path-traversal-direct` | Path traversal (CWE-22) | no | vulnerable |
-| `cmdi-direct` | Command injection (CWE-78) | no | vulnerable |
+| id | category | crosses layers | expected | detected |
+|---|---|---|---|---|
+| `sqli-direct` | SQL injection (CWE-89) | no (baseline) | vulnerable | ✅ |
+| `sqli-through-service` | SQL injection (CWE-89) | yes — Controller→Service→Repository | vulnerable | ✅ |
+| `sqli-three-layers` | SQL injection (CWE-89) | yes — +Validator (4 layers) | vulnerable | ✅ |
+| `sqli-via-kafka` | SQL injection (CWE-89) | yes — `@KafkaListener` source | vulnerable | ✅ |
+| `sqli-safe-parameterized` | SQL injection (CWE-89) | yes | **safe** (NamedParameter) | ✅ not flagged |
+| `sqli-safe-prepared` | SQL injection (CWE-89) | no | **safe** (`?` parameter) | ✅ not flagged |
+| `xss-reflected` | Reflected XSS (CWE-79) | no | vulnerable | ✅ |
+| `xss-conditional-sanitizer` | XSS (CWE-79) | no | vulnerable (branch w/o escape) | ✅ |
+| `xss-safe-escaped` | XSS (CWE-79) | no | **safe** (`HtmlUtils.htmlEscape`) | ✅ not flagged |
+| `ssrf-rest-template` | SSRF (CWE-918) | no | vulnerable | ✅ |
+| `spel-injection` | SpEL injection (CWE-917) | no | vulnerable | ✅ |
+| `path-traversal-direct` | Path traversal (CWE-22) | no | vulnerable | ✅ |
+| `cmdi-direct` | Command injection (CWE-78) | no | vulnerable | ✅ |
+| `open-redirect` | Open redirect (CWE-601) | no | vulnerable | ⚠️ known gap |
 
-**6 vulnerable, 2 safe.**
+**11 vulnerable, 3 safe.** Current engine result: **10/11 detected, 0 false positives.**
+The single miss (`open-redirect`) is a documented gap: the sink (`sendRedirect`) is
+called on an interface-typed parameter (`HttpServletResponse`), which has no
+points-to object under the current entry-point modelling.
 
 ## Layout
 
@@ -37,11 +46,17 @@ src/main/java/io/github/gabrielbbaldez/springtaint/benchmark/
 ├── sqli/
 │   ├── direct/          # source and sink in one method (baseline)
 │   ├── throughservice/  # Controller → Service → Repository (flagship)
+│   ├── threelayers/     # Controller → Service → Validator → Repository
 │   ├── viakafka/        # @KafkaListener payload as source
-│   └── safe/            # parameterized query (negative case)
+│   └── safe/            # parameterized queries (negative cases)
 ├── xss/
 │   ├── reflected/       # request param → response writer
 │   └── safe/            # HtmlUtils.htmlEscape (negative case)
+├── conditional/         # sanitizer applied only on one branch
+├── ssrf/
+│   └── resttemplate/    # user URL → RestTemplate.getForObject
+├── spel/                # user expression → ExpressionParser.parseExpression
+├── openredirect/        # user URL → response.sendRedirect (known gap)
 ├── pathtraversal/
 │   └── direct/          # filename → new File(...)
 └── cmdi/
