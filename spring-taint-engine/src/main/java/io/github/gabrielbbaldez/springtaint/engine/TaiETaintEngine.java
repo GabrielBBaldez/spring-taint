@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
 import pascal.taie.World;
 import pascal.taie.analysis.pta.PointerAnalysis;
 import pascal.taie.analysis.pta.PointerAnalysisResult;
-import pascal.taie.analysis.pta.plugin.taint.TaintAnalysis;
 import pascal.taie.analysis.pta.plugin.taint.TaintFlowExtractor;
 import pascal.taie.analysis.pta.plugin.taint.TaintFlowExtractor.ExtractedFlow;
+import pascal.taie.analysis.pta.plugin.taint.TaintFlowExtractor.Hop;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,7 +63,7 @@ public final class TaiETaintEngine implements TaintEngine {
             log.info("Running Tai-e: {}", String.join(" ", args));
             pascal.taie.Main.main(args);
 
-            List<ExtractedFlow> flows = TaintFlowExtractor.extract(readTaintFlows());
+            List<ExtractedFlow> flows = TaintFlowExtractor.extract(getPointerAnalysisResult());
             log.info("Tai-e reported {} taint flow(s)", flows.size());
 
             List<Finding> findings = new ArrayList<>();
@@ -153,13 +153,12 @@ public final class TaiETaintEngine implements TaintEngine {
         }
     }
 
-    /** Reads the {@code Set<TaintFlow>} Tai-e stored in the pointer analysis result. */
-    private Object readTaintFlows() {
+    /** The pointer analysis result Tai-e stored in the World (taint flows + call graph). */
+    private PointerAnalysisResult getPointerAnalysisResult() {
         try {
-            PointerAnalysisResult result = World.get().getResult(PointerAnalysis.ID);
-            return result == null ? null : result.getResult(TaintAnalysis.class.getName());
+            return World.get().getResult(PointerAnalysis.ID);
         } catch (RuntimeException e) {
-            log.warn("Could not read taint result from Tai-e: {}", e.toString());
+            log.warn("Could not read pointer analysis result from Tai-e: {}", e.toString());
             return null;
         }
     }
@@ -168,11 +167,21 @@ public final class TaiETaintEngine implements TaintEngine {
         String key = flow.sinkMethodClass() + "#" + flow.sinkMethodName();
         String vuln = vulnByMethod.getOrDefault(key, "taint");
         Severity severity = severityFor(vuln);
-        List<FlowStep> trace = List.of(
-                new FlowStep(flow.sourceClass() + ".java", flow.sourceLine(),
-                        "source: " + flow.sourceMethod() + "() - tainted parameter"),
-                new FlowStep(flow.sinkClass() + ".java", flow.sinkLine(),
-                        "sink: " + flow.sinkMethodName() + "()"));
+
+        List<FlowStep> trace = new ArrayList<>();
+        trace.add(new FlowStep(flow.sourceClass() + ".java", flow.sourceLine(),
+                "source: " + flow.sourceMethod() + "() - tainted parameter"));
+        // Intermediate hops on the call path (the first/last path methods are the
+        // source and sink containers, already shown as the source/sink steps).
+        List<Hop> hops = flow.trace();
+        for (int i = 1; i < hops.size() - 1; i++) {
+            Hop hop = hops.get(i);
+            trace.add(new FlowStep(hop.className() + ".java", hop.line(),
+                    "via " + hop.className() + "." + hop.methodName() + "()"));
+        }
+        trace.add(new FlowStep(flow.sinkClass() + ".java", flow.sinkLine(),
+                "sink: " + flow.sinkMethodName() + "()"));
+
         String message = "Tainted data reaches " + flow.sinkMethodName() + " (" + vuln + ")";
         return new Finding(vuln, severity, message, null,
                 flow.sinkClass() + ".java", flow.sinkLine(), trace);

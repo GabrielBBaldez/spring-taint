@@ -1,24 +1,35 @@
 package pascal.taie.analysis.pta.plugin.taint;
 
+import pascal.taie.analysis.graph.callgraph.CallGraph;
+import pascal.taie.analysis.pta.PointerAnalysisResult;
 import pascal.taie.ir.IR;
 import pascal.taie.ir.stmt.Invoke;
 import pascal.taie.ir.stmt.Stmt;
 import pascal.taie.language.classes.JMethod;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Bridges Tai-e's package-private {@link SourcePoint} and {@link SinkPoint} to a
- * public DTO.
+ * public DTO, and reconstructs the call path from source to sink.
  *
  * <p>{@code SourcePoint} and {@code SinkPoint} are package-private in Tai-e, so
- * code outside {@code pascal.taie.analysis.pta.plugin.taint} cannot read them.
- * This class lives in that package (on the classpath, split packages are legal)
- * purely to extract the source/sink locations from each {@link TaintFlow}.
+ * code outside this package cannot read them. This class lives in the package
+ * (on the classpath, split packages are legal) to extract source/sink locations
+ * and to walk the call graph between them.
  */
 public final class TaintFlowExtractor {
+
+    /** One method on the source -> sink call path. */
+    public record Hop(String className, String methodName, int line) {
+    }
 
     /** A taint flow flattened to plain, public data the reporter can use. */
     public record ExtractedFlow(
@@ -29,23 +40,32 @@ public final class TaintFlowExtractor {
             int sinkLine,
             String sinkMethodClass,
             String sinkMethodName,
-            String sinkMethodSignature) {
+            String sinkMethodSignature,
+            List<Hop> trace) {
     }
+
+    /** Safety bound on call-graph traversal when reconstructing a trace. */
+    private static final int MAX_BFS_METHODS = 20_000;
 
     private TaintFlowExtractor() {
     }
 
     /**
-     * @param taintFlowSet the value stored by Tai-e under
-     *                     {@code TaintAnalysis.class.getName()} (a {@code Set<TaintFlow>}),
-     *                     or {@code null}.
+     * @param result the pointer analysis result (holds the taint flows under
+     *               {@code TaintAnalysis.class.getName()} and the call graph),
+     *               or {@code null}.
      */
     @SuppressWarnings("unchecked")
-    public static List<ExtractedFlow> extract(Object taintFlowSet) {
-        List<ExtractedFlow> result = new ArrayList<>();
-        if (!(taintFlowSet instanceof Set<?> set)) {
-            return result;
+    public static List<ExtractedFlow> extract(PointerAnalysisResult result) {
+        List<ExtractedFlow> out = new ArrayList<>();
+        if (result == null) {
+            return out;
         }
+        Object stored = result.getResult(TaintAnalysis.class.getName());
+        if (!(stored instanceof Set<?> set)) {
+            return out;
+        }
+        CallGraph<Invoke, JMethod> callGraph = result.getCallGraph();
         for (TaintFlow flow : (Set<TaintFlow>) set) {
             SourcePoint sourcePoint = flow.sourcePoint();
             SinkPoint sinkPoint = flow.sinkPoint();
@@ -53,7 +73,14 @@ public final class TaintFlowExtractor {
             Invoke sinkCall = sinkPoint.sinkCall();
             JMethod sinkContainer = sinkCall.getContainer();
             JMethod sinkMethod = sinkPoint.sink().method();
-            result.add(new ExtractedFlow(
+
+            List<Hop> trace = new ArrayList<>();
+            for (JMethod method : findCallPath(callGraph, sourceMethod, sinkContainer)) {
+                trace.add(new Hop(method.getDeclaringClass().getSimpleName(),
+                        method.getName(), firstLine(method)));
+            }
+
+            out.add(new ExtractedFlow(
                     sourceMethod.getDeclaringClass().getSimpleName(),
                     sourceMethod.getName(),
                     firstLine(sourceMethod),
@@ -61,9 +88,47 @@ public final class TaintFlowExtractor {
                     sinkCall.getLineNumber(),
                     sinkMethod.getDeclaringClass().getName(),
                     sinkMethod.getName(),
-                    sinkMethod.getSignature()));
+                    sinkMethod.getSignature(),
+                    trace));
         }
-        return result;
+        return out;
+    }
+
+    /**
+     * Shortest call path (as methods) from {@code from} to {@code to}, inclusive.
+     * Returns {@code [from]} if they are the same method, or {@code [from, to]}
+     * if no path is found within the traversal bound.
+     */
+    private static List<JMethod> findCallPath(CallGraph<Invoke, JMethod> cg, JMethod from, JMethod to) {
+        if (from.equals(to)) {
+            return List.of(from);
+        }
+        Map<JMethod, JMethod> parent = new HashMap<>();
+        Deque<JMethod> queue = new ArrayDeque<>();
+        queue.add(from);
+        parent.put(from, null);
+        int visited = 0;
+        while (!queue.isEmpty() && visited++ < MAX_BFS_METHODS) {
+            JMethod current = queue.poll();
+            for (JMethod callee : cg.getCalleesOfM(current)) {
+                if (!parent.containsKey(callee)) {
+                    parent.put(callee, current);
+                    if (callee.equals(to)) {
+                        return reconstructPath(parent, to);
+                    }
+                    queue.add(callee);
+                }
+            }
+        }
+        return List.of(from, to);
+    }
+
+    private static List<JMethod> reconstructPath(Map<JMethod, JMethod> parent, JMethod to) {
+        LinkedList<JMethod> path = new LinkedList<>();
+        for (JMethod method = to; method != null; method = parent.get(method)) {
+            path.addFirst(method);
+        }
+        return path;
     }
 
     /** First positive source line of a method, or 0 if unavailable. */
