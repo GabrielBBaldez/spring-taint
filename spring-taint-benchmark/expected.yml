@@ -11,7 +11,7 @@
 # Paths are relative to this module (spring-taint-benchmark/).
 
 benchmark: spring-taint-benchmark
-version: 0.6.0
+version: 0.17.1
 base: src/main/java/io/github/gabrielbbaldez/springtaint/benchmark
 
 cases:
@@ -424,10 +424,14 @@ summary:
   sources: [RequestParam, PathVariable, RequestBody, RequestHeader, MatrixVariable, RequestPart,
             KafkaListener, RabbitListener, "JAX-RS QueryParam", "@Repository read (stored)",
             "MultipartFile.getOriginalFilename", "@FeignClient result", "@Scheduled entry point"]
+  # Frameworks exercised by an actual benchmark case. Micronaut sources are implemented
+  # in the engine but not yet covered by a case here, so it is intentionally omitted.
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, Spring AMQP/RabbitMQ,
-               JAX-RS/Quarkus, Micronaut, Spring Cloud OpenFeign]
+               JAX-RS/Quarkus, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
   detectedVulnerable: 36        # taint engine alone
   detectedWithNearMiss: 37      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
+  # No vulnerability is fully missed; one case (nearmiss-wrong-context) is detected only
+  # with the --src near-miss layer, not by the taint engine alone -- hence 36 vs 37.
   knownGaps: []

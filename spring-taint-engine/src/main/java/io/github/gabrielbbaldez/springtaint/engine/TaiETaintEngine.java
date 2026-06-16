@@ -182,12 +182,22 @@ public final class TaiETaintEngine implements TaintEngine {
 
     /** The pointer analysis result Tai-e stored in the World (taint flows + call graph). */
     private PointerAnalysisResult getPointerAnalysisResult() {
+        PointerAnalysisResult result;
         try {
-            return World.get().getResult(PointerAnalysis.ID);
+            result = World.get().getResult(PointerAnalysis.ID);
         } catch (RuntimeException e) {
-            log.warn("Could not read pointer analysis result from Tai-e: {}", e.toString());
-            return null;
+            // A security scanner must not silently report "0 findings" when its own
+            // analysis failed -- fail loudly so CI never goes green on a broken scan.
+            throw new IllegalStateException(
+                    "Tai-e produced no pointer-analysis result, so the scan cannot continue. "
+                    + "Common causes: the target is not compiled, --libs is incomplete, or the "
+                    + "target bytecode is newer than JDK 17 (the Tai-e frontend limit).", e);
         }
+        if (result == null) {
+            throw new IllegalStateException(
+                    "Tai-e produced no pointer-analysis result, so the scan cannot continue.");
+        }
+        return result;
     }
 
     private Finding toFinding(ExtractedFlow flow, Map<String, String> vulnByMethod) {
@@ -211,7 +221,8 @@ public final class TaiETaintEngine implements TaintEngine {
 
         String message = "Tainted data reaches " + flow.sinkMethodName() + " (" + vuln + ")";
         return new Finding(vuln, severity, message, null,
-                flow.sinkClass() + ".java", flow.sinkLine(), trace, confidence(vuln, hops));
+                flow.sinkClass() + ".java", flow.sinkLine(), trace,
+                confidence(vuln, hops, flow.pathResolved()));
     }
 
     /** High-confidence categories: concrete, well-known sinks for a real injection. */
@@ -225,15 +236,21 @@ public final class TaiETaintEngine implements TaintEngine {
      * how many assumptions a flow makes in real-world code: short, lambda-free paths
      * into a concrete injection sink are the most certain.
      */
-    private static int confidence(String vuln, List<Hop> hops) {
+    private static int confidence(String vuln, List<Hop> hops, boolean pathResolved) {
         int score = 70;
-        int intermediate = Math.max(0, hops.size() - 2);   // hops excluding source and sink
-        if (intermediate == 0) {
-            score += 20;
-        } else if (intermediate <= 2) {
-            score += 10;
-        } else if (intermediate >= 5) {
+        if (!pathResolved) {
+            // the call path could not be reconstructed within the traversal bound, so its
+            // real length is unknown -- do not reward it as a short, direct flow
             score -= 15;
+        } else {
+            int intermediate = Math.max(0, hops.size() - 2);   // hops excluding source and sink
+            if (intermediate == 0) {
+                score += 20;
+            } else if (intermediate <= 2) {
+                score += 10;
+            } else if (intermediate >= 5) {
+                score -= 15;
+            }
         }
         if (STRONG_SINKS.contains(vuln)) {
             score += 10;

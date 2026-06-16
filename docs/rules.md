@@ -301,6 +301,7 @@ vulnerabilities" rather than "rule never ran".
 - The reported trace is the shortest **call path** from source to sink (control
   flow); a value that detours through a side method may not appear as a hop.
   Exact data-flow traces require Tai-e to expose its taint flow graph.
-- Reflection, dynamic proxies (Spring AOP/CGLib) and cross-request stored
-  injection are not modelled.
+- Reflection and dynamic proxies (Spring AOP / CGLib) introduce indirection that can
+  break the call graph and hide a flow. (Cross-request stored injection *is* modelled,
+  via `@Repository` reads -- see "Stored / second-order injection" above.)
 - The analysis runs on **JDK 17** (Tai-e 0.5.1 does not read JDK 21 bytecode).

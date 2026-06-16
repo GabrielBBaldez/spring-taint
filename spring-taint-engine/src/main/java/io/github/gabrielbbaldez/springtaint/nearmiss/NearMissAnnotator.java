@@ -117,12 +117,8 @@ public final class NearMissAnnotator {
             String file = entry.getKey();
             List<String> lines = entry.getValue();
             Map<String, Integer> escaped = new HashMap<>();
+            int depth = 0;
             for (int i = 0; i < lines.size(); i++) {
-                // A method's closing brace ends the scope of its locals; don't carry an
-                // escaped variable name into another method that reuses the same name.
-                if (lines.get(i).strip().equals("}")) {
-                    escaped.clear();
-                }
                 Matcher assign = ESCAPE_ASSIGN.matcher(lines.get(i));
                 if (assign.find()) {
                     escaped.put(assign.group(1), i + 1);
@@ -139,6 +135,20 @@ public final class NearMissAnnotator {
                             List.of(new FlowStep(file, line, "sink: sendRedirect(escaped url)")))
                             .withNearMiss("htmlEscape protects against XSS, not open redirect; "
                                     + "validate the URL against an allowlist of hosts/paths"));
+                }
+                // Track brace depth so a method's locals go out of scope only at the
+                // class-body level (depth <= 1); a closing brace of an if/for/try
+                // (depth still >= 2) must NOT clear the escaped-variable map.
+                for (int c = 0; c < lines.get(i).length(); c++) {
+                    char ch = lines.get(i).charAt(c);
+                    if (ch == '{') {
+                        depth++;
+                    } else if (ch == '}') {
+                        depth--;
+                    }
+                }
+                if (depth <= 1) {
+                    escaped.clear();
                 }
             }
         }

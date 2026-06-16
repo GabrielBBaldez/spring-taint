@@ -42,7 +42,8 @@ public final class TaintFlowExtractor {
             String sinkMethodClass,
             String sinkMethodName,
             String sinkMethodSignature,
-            List<Hop> trace) {
+            List<Hop> trace,
+            boolean pathResolved) {
     }
 
     /** Safety bound on call-graph traversal when reconstructing a trace. */
@@ -118,8 +119,10 @@ public final class TaintFlowExtractor {
             }
             JMethod sinkMethod = sinkPoint.sink().method();
 
+            List<JMethod> path = findCallPath(callGraph, sourceMethod, sinkContainer);
+            boolean pathResolved = !path.isEmpty();
             List<Hop> trace = new ArrayList<>();
-            for (JMethod method : findCallPath(callGraph, sourceMethod, sinkContainer)) {
+            for (JMethod method : path) {
                 trace.add(new Hop(outerSimpleName(method.getDeclaringClass()),
                         method.getName(), firstLine(method)));
             }
@@ -133,7 +136,8 @@ public final class TaintFlowExtractor {
                     sinkMethod.getDeclaringClass().getName(),
                     sinkMethod.getName(),
                     sinkMethod.getSignature(),
-                    trace));
+                    trace,
+                    pathResolved));
         }
         return out;
     }
@@ -164,7 +168,7 @@ public final class TaintFlowExtractor {
                 }
             }
         }
-        return List.of(from, to);
+        return List.of();   // no path within the bound; the caller marks the flow unresolved
     }
 
     private static List<JMethod> reconstructPath(Map<JMethod, JMethod> parent, JMethod to) {

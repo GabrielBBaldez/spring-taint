@@ -119,17 +119,23 @@ public final class ScanCommand implements Callable<Integer> {
 
         new ConsoleReporter(System.out, verbose).report(findings);
 
+        // Generate autofix patches once (when sources are available) and reuse them for
+        // both the console output and the SARIF, so the SARIF diff stays based on the
+        // original source even when --fix has already rewritten the files on disk.
+        List<io.github.gabrielbbaldez.springtaint.autofix.Patch> patches = (src != null)
+                ? new io.github.gabrielbbaldez.springtaint.autofix.AutofixGenerator().generate(findings, src)
+                : List.of();
+
         if (suggestFixes || fix) {
-            handleFixes(findings);
+            if (src == null) {
+                System.err.println("--suggest-fixes / --fix needs --src <source dir>.");
+            } else {
+                handleFixes(patches);
+            }
         }
 
         if (output != null) {
-            // When sources are available, attach the autofix suggestions so the SARIF
-            // (and the dashboard that reads it) can show the proposed fix per finding.
-            List<io.github.gabrielbbaldez.springtaint.autofix.Patch> sarifFixes = (src != null)
-                    ? new io.github.gabrielbbaldez.springtaint.autofix.AutofixGenerator().generate(findings, src)
-                    : List.of();
-            new SarifWriter().withFixes(sarifFixes).write(output, findings);
+            new SarifWriter().withFixes(patches).write(output, findings);
             System.out.println("SARIF report written to " + output);
         }
 
@@ -239,13 +245,7 @@ public final class ScanCommand implements Callable<Integer> {
     }
 
     /** Generates parameterized-query fixes; shows them, and applies high-confidence ones with --fix. */
-    private void handleFixes(List<Finding> findings) throws IOException {
-        if (src == null) {
-            System.err.println("--suggest-fixes / --fix needs --src <source dir>.");
-            return;
-        }
-        List<io.github.gabrielbbaldez.springtaint.autofix.Patch> patches =
-                new io.github.gabrielbbaldez.springtaint.autofix.AutofixGenerator().generate(findings, src);
+    private void handleFixes(List<io.github.gabrielbbaldez.springtaint.autofix.Patch> patches) throws IOException {
         if (patches.isEmpty()) {
             System.out.println("\nNo automatic fixes available.");
             return;

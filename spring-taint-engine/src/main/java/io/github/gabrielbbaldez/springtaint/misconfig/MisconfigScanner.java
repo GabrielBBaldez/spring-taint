@@ -128,7 +128,8 @@ public final class MisconfigScanner {
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fname, String fdesc) {
-                        if (opcode == Opcodes.GETFIELD && SENSITIVE.matcher(fname).find()) {
+                        if ((opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC)
+                                && SENSITIVE.matcher(fname).find()) {
                             sensitiveByValue = true;
                         }
                         lastPushedFalse = false;

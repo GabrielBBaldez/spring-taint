@@ -429,7 +429,7 @@ spring-taint scan --verbose ./meu-projeto
 
 ```yaml
 - name: Spring Taint Analysis
-  uses: GabrielBBaldez/spring-taint@v0.17.0
+  uses: GabrielBBaldez/spring-taint@v0.17.1
   with:
     path: .
     severity: critical,high
@@ -474,11 +474,11 @@ Essas limitações serão documentadas explicitamente em cada release, junto com
 
 ## Repositórios
 
-| Repositório | Conteúdo |
-|---|---|
-| `spring-taint` | Engine principal, CLI, Spring source/sink config, benchmark |
-| `spring-taint-rules` | Regras adicionais mantidas pela comunidade |
-| `quarkus-taint` | Suporte Quarkus / JAX-RS (Fase 3) |
+| Repositório | Conteúdo | Status |
+|---|---|---|
+| `spring-taint` | Engine, CLI, source/sink config, benchmark, dashboard, plugin IntelliJ | ✅ ativo |
+| `spring-taint-rules` | Regras adicionais mantidas pela comunidade | 💡 ideia, não criado |
+| `quarkus-taint` | Suporte Quarkus / JAX-RS | ⛔ não criado — Quarkus/JAX-RS entraram no repo principal |
 
 ---
 
