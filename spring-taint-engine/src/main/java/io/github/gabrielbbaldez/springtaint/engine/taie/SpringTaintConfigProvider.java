@@ -11,6 +11,7 @@ import pascal.taie.analysis.pta.plugin.taint.TaintTransfer;
 import pascal.taie.analysis.pta.plugin.util.InvokeUtils;
 import pascal.taie.language.classes.ClassHierarchy;
 import pascal.taie.language.classes.JClass;
+import pascal.taie.language.classes.JField;
 import pascal.taie.language.classes.JMethod;
 import pascal.taie.language.type.Type;
 import pascal.taie.language.type.TypeSystem;
@@ -106,8 +107,10 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
                 }
                 String name = method.getName();
                 if (method.getParamCount() == 0 && returnsString(method)
-                        && (name.startsWith("get") || name.startsWith("is"))) {
-                    // getter: the bean's taint flows out to the returned String
+                        && (name.startsWith("get") || name.startsWith("is") || declaresField(clazz, name))) {
+                    // getter or record accessor: the bean's taint flows out to the returned
+                    // String. A record's accessor is named after its component (e.g. term()),
+                    // so it is matched by the field-name check, not the get*/is* prefix.
                     transfers.add(new TaintTransfer(method, base, result, method.getReturnType()));
                 } else if (method.getParamCount() == 1 && name.startsWith("set")
                         && STRING_TYPE.equals(method.getParamType(0).getName())) {
@@ -123,6 +126,21 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
     /** A non-static method returning {@code java.lang.String}. */
     private static boolean returnsString(JMethod method) {
         return !method.isStatic() && STRING_TYPE.equals(method.getReturnType().getName());
+    }
+
+    /**
+     * Whether {@code clazz} declares a field named {@code name} -- true for a record's
+     * accessor (named after its component) and for field-named accessors that don't use
+     * the {@code get}/{@code is} convention. Keeps the bean model precise: only methods
+     * backed by an actual field are treated as accessors.
+     */
+    private static boolean declaresField(JClass clazz, String name) {
+        for (JField field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** A @Repository read method ({@code find*}/{@code get*}/...) returning a String. */
