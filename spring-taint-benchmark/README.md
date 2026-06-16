@@ -46,6 +46,9 @@ Sources covered: Spring (`@RequestParam`, `@PathVariable`, `@RequestBody`,
 (stored / second-order injection). Sinks on interface library types (`sendRedirect`,
 R2DBC `DatabaseClient.sql`) are matched via Tai-e `call-site-mode`.
 
+> `secrets/HardcodedSecrets.java` is **not** a taint case — it feeds the separate
+> `spring-taint secrets` scanner. Run: `spring-taint secrets spring-taint-benchmark/target/classes`.
+
 ## Layout
 
 ```

@@ -56,6 +56,11 @@ public final class ScanCommand implements Callable<Integer> {
     @Option(names = {"-v", "--verbose"}, description = "Show the full taint trace.")
     private boolean verbose;
 
+    @Option(names = "--no-default-config",
+            description = "With --config, use only that file instead of merging it "
+                    + "onto the built-in default rules.")
+    private boolean noDefaultConfig;
+
     @Override
     public Integer call() throws Exception {
         if (target == null || !Files.exists(target)) {
@@ -83,27 +88,38 @@ public final class ScanCommand implements Callable<Integer> {
     }
 
     /**
-     * Loads the taint config: explicit {@code --config}, else
-     * {@code ./config/spring-taint.yml}, else the default bundled in the jar.
+     * Loads the taint config. With no {@code --config}, returns the default
+     * (./config/spring-taint.yml, else the bundled one). With {@code --config},
+     * merges that file onto the default, unless {@code --no-default-config} is set.
      */
     private TaintConfig loadConfig() throws IOException {
-        if (config != null) {
-            if (!Files.exists(config)) {
-                System.err.println("Config not found: " + config);
-                return null;
+        if (config == null) {
+            TaintConfig def = loadDefault();
+            if (def == null) {
+                System.err.println("No taint config found; pass one with --config.");
             }
-            return TaintConfigLoader.load(config);
+            return def;
         }
+        if (!Files.exists(config)) {
+            System.err.println("Config not found: " + config);
+            return null;
+        }
+        TaintConfig user = TaintConfigLoader.load(config);
+        if (noDefaultConfig) {
+            return user;
+        }
+        TaintConfig def = loadDefault();
+        return def == null ? user : def.mergeWith(user);
+    }
+
+    /** The default config: ./config/spring-taint.yml if present, else the one bundled in the jar. */
+    private TaintConfig loadDefault() throws IOException {
         Path local = Path.of("config", "spring-taint.yml");
         if (Files.exists(local)) {
             return TaintConfigLoader.load(local);
         }
         try (InputStream bundled = getClass().getResourceAsStream("/spring-taint.yml")) {
-            if (bundled == null) {
-                System.err.println("No taint config found; pass one with --config.");
-                return null;
-            }
-            return TaintConfigLoader.load(bundled);
+            return bundled == null ? null : TaintConfigLoader.load(bundled);
         }
     }
 

@@ -80,6 +80,22 @@ A user-controlled URL is used as a redirect target.
 
 ---
 
+## `hardcoded-secret` — CWE-798 (high / critical)
+
+A separate, pattern-based scan of the compiled bytecode (not taint). Run it with
+`spring-taint secrets <classes>`. Detects:
+
+- `static final String` constants whose **name** looks like a secret
+  (`password`, `secret`, `api[_-]?key`, `token`, `credential`, …) — **high**;
+- string literals matching a known **secret format** (AWS `AKIA…`, PEM private
+  keys, GitHub `ghp_…`, Slack `xox…`, `sk-…`) — **critical**;
+- `@Value("${prop:default}")` whose hardcoded default is a secret.
+
+Reported values are masked. `spring-taint secrets` works on any JDK (it does not
+run the taint engine).
+
+---
+
 ## Extending
 
 Add your own sources, sinks, sanitizers and transfers in Tai-e's YAML format and

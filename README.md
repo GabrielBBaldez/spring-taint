@@ -235,6 +235,18 @@ java -jar spring-taint-engine/target/spring-taint-all.jar \
 > JDK 21 bytecode, so run the analyzer with a JDK 17 runtime (the project still
 > compiles to Java 17 on any JDK 17+).
 
+A custom `--config` is **merged** onto the built-in rules (use `--no-default-config`
+to replace them instead).
+
+### Hardcoded secrets
+
+A separate, pattern-based scan (any JDK) finds secrets in compiled bytecode —
+secret-named constants, known key formats (AWS, GitHub, …), and `@Value` defaults:
+
+```bash
+java -jar spring-taint-engine/target/spring-taint-all.jar secrets target/classes
+```
+
 ---
 
 ## GitHub Action
@@ -297,7 +309,8 @@ cd dashboard && npm install && npm run dev   # → http://localhost:4321
 - [x] precision/recall on the current benchmark — **17/17 vulnerable cases detected, 0 false positives** across SQL injection (direct / through-service / four-layer / via-Kafka / reactive R2DBC), reflected / conditional / **cross-request stored** XSS, SSRF, SpEL, path traversal, command injection, open redirect; multi-framework sources (Spring MVC/WebFlux, Kafka, JAX-RS/Quarkus, Micronaut, `@Repository` reads)
 - [x] Phase 2 differentiators: `@KafkaListener` source, conditional sanitizers, stored / second-order injection
 - [x] GitHub Action (Docker) + self-contained jar + CI workflow
-- [ ] Public release v0.1.0
+- [x] Web dashboard (React + Vite) for SARIF reports
+- [x] Hardcoded-secrets scanner (`secrets` command); mergeable `--config`
 
 ---
 
