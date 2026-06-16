@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.16.0] - 2026-06-16
+
+### Added
+- **Bean / DTO taint modeling** — value objects are treated as taint containers: a
+  tainted bean's `String` getter returns a tainted value, and a `String` setter taints
+  the bean. This catches the common real-world pattern where request data round-trips
+  through a DTO / form / command bean (a `@RequestBody`, or a bean built via setters)
+  before reaching a sink. `String`-only to stay precise. Benchmark gains a bean case
+  (36 vulnerable, 35 by the taint engine alone, 0 false positives).
+
+### Validated
+- The model generates **1303 accessor transfers** on `spring-petclinic-rest` yet keeps
+  **0 false positives** there — confirming it does not over-taint real, clean code. See
+  [docs/validation.md](docs/validation.md).
+
 ## [0.15.0] - 2026-06-16
 
 ### Added
@@ -226,6 +241,7 @@ benchmark did not exercise, but real multi-package projects would):
 - CLI with SARIF 2.1 output, a Docker-based GitHub Action, and a benchmark with
   documented ground truth.
 
+[0.16.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.16.0
 [0.15.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.15.0
 [0.14.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.14.0
 [0.13.0]: https://github.com/GabrielBBaldez/spring-taint/releases/tag/v0.13.0

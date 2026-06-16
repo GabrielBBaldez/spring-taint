@@ -7,6 +7,7 @@ import pascal.taie.analysis.pta.plugin.taint.IndexRef;
 import pascal.taie.analysis.pta.plugin.taint.ParamSource;
 import pascal.taie.analysis.pta.plugin.taint.Source;
 import pascal.taie.analysis.pta.plugin.taint.TaintConfigProvider;
+import pascal.taie.analysis.pta.plugin.taint.TaintTransfer;
 import pascal.taie.analysis.pta.plugin.util.InvokeUtils;
 import pascal.taie.language.classes.ClassHierarchy;
 import pascal.taie.language.classes.JClass;
@@ -82,6 +83,41 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
         log.info("Spring layer: generated {} param source(s), {} persistence-read source(s) "
                 + "and {} feign-client source(s)", paramSources, storeSources, feignSources);
         return sources;
+    }
+
+    /**
+     * Models value objects (DTOs, form/command beans, entities) as taint containers:
+     * a tainted bean's {@code String} getter returns a tainted value, and a
+     * {@code String} setter taints the bean. This catches flows where a
+     * {@code @RequestBody}/built bean carries untrusted data into a sink via its
+     * accessors (a common pattern that pure source/sink matching misses). Restricted
+     * to {@code String} accessors of application classes to stay precise.
+     */
+    @Override
+    protected List<TaintTransfer> transfers() {
+        IndexRef base = new IndexRef(IndexRef.Kind.VAR, InvokeUtils.BASE, null);
+        IndexRef result = new IndexRef(IndexRef.Kind.VAR, InvokeUtils.RESULT, null);
+        IndexRef arg0 = new IndexRef(IndexRef.Kind.VAR, 0, null);
+        List<TaintTransfer> transfers = new ArrayList<>();
+        for (JClass clazz : hierarchy.applicationClasses().toList()) {
+            for (JMethod method : clazz.getDeclaredMethods()) {
+                if (method.isStatic() || method.isAbstract()) {
+                    continue;
+                }
+                String name = method.getName();
+                if (method.getParamCount() == 0 && returnsString(method)
+                        && (name.startsWith("get") || name.startsWith("is"))) {
+                    // getter: the bean's taint flows out to the returned String
+                    transfers.add(new TaintTransfer(method, base, result, method.getReturnType()));
+                } else if (method.getParamCount() == 1 && name.startsWith("set")
+                        && STRING_TYPE.equals(method.getParamType(0).getName())) {
+                    // setter: a tainted String taints the bean
+                    transfers.add(new TaintTransfer(method, arg0, base, clazz.getType()));
+                }
+            }
+        }
+        log.info("Spring layer: generated {} bean accessor transfer(s)", transfers.size());
+        return transfers;
     }
 
     /** A non-static method returning {@code java.lang.String}. */

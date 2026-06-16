@@ -8,8 +8,11 @@ sanitizers are concrete library methods, configurable in
 ## Sources (all rules)
 
 External input is taint. Library signatures are recognized in both their `jakarta.*`
-(Spring Boot 3) and `javax.*` (Spring Boot 2 / Java EE) forms. A value read from a
-tainted `@RequestParam Map` via `Map.get` is itself tainted. Recognized entry points:
+(Spring Boot 3) and `javax.*` (Spring Boot 2 / Java EE) forms. Taint also flows through
+containers: a tainted `@RequestParam Map` taints values read via `Map.get`, and a value
+object (DTO / form / command bean) is a taint container — a `String` set on it via a
+setter, or a `@RequestBody`-bound bean, taints what its `String` getters return.
+Recognized entry points:
 
 | Framework | Annotations / methods |
 |---|---|

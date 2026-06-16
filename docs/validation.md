@@ -130,13 +130,12 @@ java -jar spring-taint-all.jar config   src/main/resources
 
 Running on real apps also exposes where the engine stops — recorded honestly:
 
-- **Taint through arbitrary bean/DTO getters and framework callbacks.** In
-  `kaakaww/javaspringvulny`, the SQL injection flows through a DTO getter
-  (`search.getSearchText()`) read inside a Hibernate `session.doReturningWork(...)`
-  anonymous callback. The engine models `String` reads from `@Repository`/`@FeignClient`
-  and `Map.get`, but not value objects' getters in general nor framework-supplied
-  callbacks, so this flow is not reported. Modelling bean-field taint and common
-  callback interfaces is future work.
+- **Framework callbacks.** In `kaakaww/javaspringvulny`, the SQL injection flows
+  through a DTO getter (`search.getSearchText()`) read inside a Hibernate
+  `session.doReturningWork(...)` anonymous callback. Bean getters/setters are now
+  modelled as taint containers (v0.16.0), so the getter half is covered; the
+  remaining gap is taint into framework-supplied callbacks (the `Connection` handed to
+  `doReturningWork`). Modelling common callback interfaces is future work.
 - **Build/runtime constraint.** The taint `scan` needs the target compiled to JDK ≤17
   bytecode (Tai-e frontend limitation); the pattern scanners (`secrets`/`misconfig`)
   have no such limit. Older apps may need a modern `pom.xml`/toolchain to compile,
