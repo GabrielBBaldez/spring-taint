@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Spring Taint Analyzer" width="140" />
+  <img src="logo.png" alt="Spring Taint Analyzer" width="200" />
 </p>
 
 # Spring Taint Analyzer
