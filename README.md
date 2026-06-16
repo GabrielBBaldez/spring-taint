@@ -338,6 +338,14 @@ dependency classpath:
 See [`action.yml`](action.yml) for all inputs. This repo also scans its own
 benchmark on every push — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
+### Pull-request review
+
+[`examples/pr-security.yml`](examples/pr-security.yml) is a copy-paste workflow for
+your own project: on every PR it scans only the changed code (`--diff`), uploads
+SARIF so findings appear **inline in the PR** (GitHub code scanning), and posts the
+**suggested fixes** (parameterized queries / output escaping) as a PR comment. Pair
+it with `--baseline` to gate only on newly introduced issues.
+
 ---
 
 ## Dashboard

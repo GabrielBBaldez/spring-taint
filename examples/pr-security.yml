@@ -1,0 +1,76 @@
+# Example: run Spring Taint Analyzer on pull requests.
+#
+# Copy this into your project's .github/workflows/ and adjust the build/classpath
+# steps to match your project. It:
+#   1. scans only what the PR changed (--diff),
+#   2. uploads SARIF so findings appear inline in the PR (GitHub code scanning), and
+#   3. posts the suggested fixes (parameterized queries / output escaping) as a comment.
+#
+# Needs: permissions for code scanning + PR comments, and a JDK 17 runtime for the
+# taint scan (Tai-e 0.5.1 cannot read JDK 21 bytecode).
+
+name: Security (Spring Taint)
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write   # upload-sarif
+  pull-requests: write     # post the fix-suggestions comment
+
+jobs:
+  spring-taint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # so --diff can see the base branch
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # --- build YOUR project and resolve its dependency classpath ---
+      - name: Build
+        run: mvn -B -ntp compile -DskipTests
+      - name: Resolve classpath
+        run: mvn -B -ntp dependency:build-classpath -Dmdep.outputFile=cp.txt -q
+
+      # --- get the analyzer (until it is published, build the jar from source) ---
+      - name: Get spring-taint
+        run: |
+          git clone --depth 1 https://github.com/GabrielBBaldez/spring-taint.git /tmp/st
+          (cd /tmp/st && mvn -B -ntp -pl spring-taint-engine -am package -DskipTests -q)
+          cp /tmp/st/spring-taint-engine/target/spring-taint-all.jar spring-taint.jar
+
+      - name: Scan changed code
+        run: |
+          java -jar spring-taint.jar scan target/classes \
+            --libs "$(cat cp.txt)" \
+            --src src/main/java \
+            --diff origin/${{ github.base_ref }} \
+            --suggest-fixes \
+            --output results.sarif | tee scan.out || true
+
+      - name: Upload SARIF (inline PR annotations)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+
+      - name: Comment suggested fixes
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if grep -q "suggested fix" scan.out; then
+            {
+              echo "### 🛡️ Spring Taint Analyzer — suggested fixes";
+              echo '```';
+              sed -n '/suggested fix/,$p' scan.out;
+              echo '```';
+            } > comment.md
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          fi
