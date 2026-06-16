@@ -231,6 +231,15 @@ cases:
     sinkFile: bean/FluentDtoSqliController.java
     note: "Lombok @Accessors(fluent) shape: a field-named setter returns the bean for chaining"
 
+  - id: bean-copy-sqli
+    category: sql-injection
+    severity: critical
+    expected: true
+    crossLayer: false
+    sourceFile: bean/BeanCopyDtoSqliController.java
+    sinkFile: bean/BeanCopyDtoSqliController.java
+    note: "request DTO copied into an entity via Spring BeanUtils.copyProperties (reflective copy), then read into the query"
+
   # ---------------- Reactive (WebFlux / R2DBC) ----------------
   - id: webflux-sqli
     category: sql-injection
@@ -442,8 +451,8 @@ cases:
 
 # Totals (kept in sync by hand).
 summary:
-  total: 43
-  expectedVulnerable: 40
+  total: 44
+  expectedVulnerable: 41
   expectedSafe: 3
   categories: [sql-injection, jpql-injection, xss, ssrf, spel-injection, jndi-injection,
                xxe, path-traversal, command-injection, log-injection, template-injection,
@@ -456,9 +465,9 @@ summary:
   frameworks: [Spring MVC, Spring WebFlux, Spring Kafka, Spring AMQP/RabbitMQ,
                JAX-RS/Quarkus, Spring Cloud OpenFeign]
   # Current engine results on this benchmark:
-  detectedVulnerable: 39        # taint engine alone
-  detectedWithNearMiss: 40      # adding the near-miss layer (--src) catches the wrong-context case
+  detectedVulnerable: 40        # taint engine alone
+  detectedWithNearMiss: 41      # adding the near-miss layer (--src) catches the wrong-context case
   falsePositives: 0
   # No vulnerability is fully missed; one case (nearmiss-wrong-context) is detected only
-  # with the --src near-miss layer, not by the taint engine alone -- hence 39 vs 40.
+  # with the --src near-miss layer, not by the taint engine alone -- hence 40 vs 41.
   knownGaps: []

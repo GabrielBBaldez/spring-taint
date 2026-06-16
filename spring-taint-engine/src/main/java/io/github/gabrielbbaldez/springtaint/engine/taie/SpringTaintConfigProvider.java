@@ -132,8 +132,48 @@ public final class SpringTaintConfigProvider extends TaintConfigProvider {
                 }
             }
         }
-        log.info("Spring layer: generated {} bean accessor transfer(s)", transfers.size());
+        int accessorTransfers = transfers.size();
+        addBeanCopyTransfers(transfers);
+        log.info("Spring layer: generated {} bean accessor transfer(s) and {} bean-copy transfer(s)",
+                accessorTransfers, transfers.size() - accessorTransfers);
         return transfers;
+    }
+
+    /**
+     * Models reflection-based bean-copy helpers ({@code BeanUtils.copyProperties}). These
+     * copy every property from one bean to another by reflection, so the analysis sees no
+     * {@code get*}/{@code set*} calls and would otherwise lose the taint at the copy --
+     * the exact idiom Spring service layers use to map a request DTO onto a JPA entity.
+     * Modeled at whole-bean granularity, consistent with the accessor model, and added
+     * only when the helper class is actually on the classpath.
+     */
+    private void addBeanCopyTransfers(List<TaintTransfer> transfers) {
+        // Spring: BeanUtils.copyProperties(Object source, Object target [, ...]) -- source -> target.
+        addArgToArg(transfers, "org.springframework.beans.BeanUtils", "copyProperties", 0, 1);
+        // Apache Commons: BeanUtils.copyProperties(Object dest, Object orig) -- note the
+        // reversed parameter order, so the taint flows orig -> dest.
+        addArgToArg(transfers, "org.apache.commons.beanutils.BeanUtils", "copyProperties", 1, 0);
+    }
+
+    /**
+     * Adds, for every overload of {@code className.methodName} with enough parameters, a
+     * transfer carrying taint from argument {@code fromIndex} to argument {@code toIndex}.
+     * No-op when the class is absent from the analyzed classpath.
+     */
+    private void addArgToArg(List<TaintTransfer> transfers, String className,
+            String methodName, int fromIndex, int toIndex) {
+        JClass clazz = hierarchy.getClass(className);
+        if (clazz == null) {
+            return;
+        }
+        IndexRef from = new IndexRef(IndexRef.Kind.VAR, fromIndex, null);
+        IndexRef to = new IndexRef(IndexRef.Kind.VAR, toIndex, null);
+        for (JMethod method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(methodName)
+                    && method.getParamCount() > Math.max(fromIndex, toIndex)) {
+                transfers.add(new TaintTransfer(method, from, to, method.getParamType(toIndex)));
+            }
+        }
     }
 
     /** A non-static method returning {@code java.lang.String}. */

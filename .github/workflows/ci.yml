@@ -36,8 +36,8 @@ jobs:
             --libs "$(cat spring-taint-benchmark/bench-cp.txt)" \
             --output spring-taint.sarif | tee scan.out || true
           count=$(grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\] ' scan.out)
-          echo "Detected $count findings (expected 39)."
-          test "$count" -eq 39
+          echo "Detected $count findings (expected 40)."
+          test "$count" -eq 40
 
       - name: Scan with --src (near-miss layer gate)
         # With --src the near-miss layer runs; the wrong-context case is detected only
@@ -48,8 +48,8 @@ jobs:
             --libs "$(cat spring-taint-benchmark/bench-cp.txt)" \
             --src spring-taint-benchmark/src/main/java | tee scan-src.out || true
           count=$(grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\] ' scan-src.out)
-          echo "Detected $count findings with --src (expected 40)."
-          test "$count" -eq 40
+          echo "Detected $count findings with --src (expected 41)."
+          test "$count" -eq 41
 
       - name: Upload SARIF
         if: always()

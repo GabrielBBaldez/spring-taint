@@ -13,7 +13,7 @@
 > Detects multi-layer data-flow vulnerabilities that conventional tools such as SonarQube cannot reach.
 
 Detects **12 vulnerability classes** across **7 frameworks**, including cross-layer,
-reactive, cross-service, and cross-request stored injection — **39 of 40 vulnerable
+reactive, cross-service, and cross-request stored injection — **40 of 41 vulnerable
 benchmark cases with 0 false positives** (the near-miss layer catches the last one and
 flags *attempted-but-incorrect* sanitization). Ships as a CLI, a self-contained jar, a
 Docker image, and a GitHub Action with SARIF 2.1 output.
@@ -166,7 +166,7 @@ spring-taint/
 
 Like FlowDroid's DroidBench, this repo ships a benchmark of intentionally vulnerable (and intentionally safe) Spring Boot cases. Every advertised detection is validated against it before release.
 
-The benchmark has **43 cases (40 vulnerable, 3 safe)** across SQL and JPQL injection
+The benchmark has **44 cases (41 vulnerable, 3 safe)** across SQL and JPQL injection
 (direct, through-service, four-layer, via Kafka and RabbitMQ, reactive R2DBC), reflected,
 conditional-sanitizer and **cross-request stored** XSS, SSRF, SpEL, JNDI, XXE,
 template injection (SSTI), log injection, path traversal, command injection, and
@@ -177,9 +177,9 @@ open redirect — with sources from Spring (`@RequestParam`, `@PathVariable`,
 plus taint flowing through `Optional` / `CompletableFuture` wrappers. Ground truth is
 in [`expected.yml`](spring-taint-benchmark/expected.yml).
 
-Current engine result: **39 of 40 vulnerable cases detected by the taint engine alone,
+Current engine result: **40 of 41 vulnerable cases detected by the taint engine alone,
 0 false positives** on the 3 safe cases; the near-miss layer (`--src`) catches the
-remaining wrong-context flow (40) and explains the rest. Full table: [benchmark README](spring-taint-benchmark/README.md).
+remaining wrong-context flow (41) and explains the rest. Full table: [benchmark README](spring-taint-benchmark/README.md).
 Per-rule reference: [docs/rules.md](docs/rules.md).
 
 Positive cases measure **recall**; safe cases measure **precision**.
