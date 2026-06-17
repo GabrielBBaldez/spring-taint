@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Docs
+- Corrected an overstated limitation. The analyzer reads **Java 21 application
+  bytecode** — recompiling the benchmark to Java 21 (bytecode major 65) and scanning
+  it yields identical results. The JDK 17 requirement is on the **analyzer's own
+  runtime** (Tai-e's invokedynamic handling trips on the JDK 21 runtime library), not
+  a limit on the bytecode version of the analyzed application.
+
 ## [0.17.1] - 2026-06-16
 
 ### Fixed

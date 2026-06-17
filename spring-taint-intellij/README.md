@@ -15,8 +15,9 @@ analyzer on the open project and surfaces the findings inside the IDE.
 The plugin **reuses the existing engine** instead of reimplementing the analysis on the
 IDE's PSI: it invokes the self-contained `spring-taint` jar and renders its SARIF output.
 The pattern scanners (`secrets` / `misconfig` / `config`) run on any JDK; the taint scan
-needs a JDK 17 runtime (the Tai-e frontend limit), which the plugin locates or prompts
-for.
+needs a JDK 17 runtime (Tai-e's invokedynamic handling trips on the JDK 21 runtime, so
+the analyzer process needs JDK 17 -- the analyzed project itself can target newer Java),
+which the plugin locates or prompts for.
 
 ## Build
 

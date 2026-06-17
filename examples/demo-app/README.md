@@ -20,8 +20,9 @@ engine rather than a single-method pattern match.
 
 ## Build
 
-The app targets JDK 17 on purpose, because the Tai-e frontend the engine is built
-on cannot read JDK 21+ bytecode. Build it with a JDK 17 toolchain:
+The app targets Java 17 for broad compatibility, but the engine reads Java 21
+application bytecode fine too -- the JDK 17 requirement is the analyzer's own runtime,
+not a limit on the scanned code. Build it with any JDK 17+ toolchain:
 
 ```bash
 mvn -f examples/demo-app/pom.xml clean compile

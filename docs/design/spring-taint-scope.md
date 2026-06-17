@@ -465,7 +465,7 @@ Toda ferramenta de análise estática tem limitações. As deste projeto:
 - **Dados vindos de banco**: stored injection requer modelagem explícita da persistência como propagador
 - **Lambdas e method references complexos**: cobertura parcial via suporte do Tai-e
 - **Análise cross-service**: dados que atravessam fronteiras de microserviços via HTTP não são rastreados na Fase 1
-- **Bytecode JDK ≤17 para o taint**: o frontend do Tai-e não lê bytecode de JDK 21+, então a análise de taint roda num runtime JDK 17 (os scanners de padrão `secrets`/`misconfig`/`config` não têm esse limite). Apps mais novos podem precisar compilar com toolchain 17.
+- **Runtime JDK 17 para o taint (não é limite do bytecode analisado)**: o *processo* da análise de taint roda num runtime JDK 17 -- o tratamento de invokedynamic do Tai-e quebra na biblioteca de runtime do JDK 21. O *app analisado* pode ser compilado com JDK mais novo: recompilar o benchmark pra bytecode Java 21 (major 65) e escanear (num runtime JDK 17) dá resultado idêntico. Os scanners de padrão (`secrets`/`misconfig`/`config`) não têm nenhum limite de JDK.
 - **Callbacks de framework**: taint que entra num callback fornecido pelo framework (ex.: o `Connection` passado a `doReturningWork` do Hibernate) ainda não é modelado.
 
 Essas limitações serão documentadas explicitamente em cada release, junto com os casos de teste que as exercitam.

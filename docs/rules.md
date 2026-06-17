@@ -304,4 +304,6 @@ vulnerabilities" rather than "rule never ran".
 - Reflection and dynamic proxies (Spring AOP / CGLib) introduce indirection that can
   break the call graph and hide a flow. (Cross-request stored injection *is* modelled,
   via `@Repository` reads -- see "Stored / second-order injection" above.)
-- The analysis runs on **JDK 17** (Tai-e 0.5.1 does not read JDK 21 bytecode).
+- The analysis *process* runs on **JDK 17** (Tai-e's invokedynamic handling trips on
+  the JDK 21 runtime); the analyzed application can be Java 21 bytecode (verified) --
+  the JDK 17 requirement is the tool's own runtime, not a limit on the scanned code.

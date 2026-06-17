@@ -192,7 +192,9 @@ Running on real apps also exposes where the engine stops — recorded honestly:
   modelled as taint containers (v0.16.0), so the getter half is covered; the
   remaining gap is taint into framework-supplied callbacks (the `Connection` handed to
   `doReturningWork`). Modelling common callback interfaces is future work.
-- **Build/runtime constraint.** The taint `scan` needs the target compiled to JDK ≤17
-  bytecode (Tai-e frontend limitation); the pattern scanners (`secrets`/`misconfig`)
-  have no such limit. Older apps may need a modern `pom.xml`/toolchain to compile,
-  which does not change their source.
+- **Runtime constraint (analyzer process, not target bytecode).** The taint `scan`
+  must run on a **JDK 17 runtime** — Tai-e's invokedynamic handling trips on the
+  JDK 21 runtime library. The *target application* can be compiled with a newer JDK:
+  recompiling this benchmark to Java 21 bytecode (major 65) and scanning it (on a
+  JDK 17 runtime) yields identical results. The pattern scanners
+  (`secrets`/`misconfig`) have no JDK constraint at all.

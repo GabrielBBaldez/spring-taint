@@ -5,9 +5,11 @@ dev setup, how to add a benchmark case, and the pull-request checklist.
 
 ## Requirements
 
-- **JDK 17** — the project compiles to Java 17, and **the analysis must run on a
-  JDK 17 runtime**: Tai-e 0.5.1's bytecode frontend cannot read JDK 21 class files.
-  You can build with any JDK 17+, but run scans with Java 17.
+- **JDK 17** — the project compiles to Java 17, and **the analyzer must run on a
+  JDK 17 runtime** (Tai-e's invokedynamic handling trips on the JDK 21 runtime
+  library). The *application under analysis* can be compiled with a newer JDK —
+  Java 21 application bytecode is read fine. You can build with any JDK 17+, but
+  run scans with Java 17.
 - **Maven 3.9+**
 
 ## Build and test

@@ -320,9 +320,11 @@ java -jar spring-taint-engine/target/spring-taint-all.jar \
   --output results.sarif
 ```
 
-> **The analysis currently runs on JDK 17.** Tai-e 0.5.1's frontend cannot read
-> JDK 21 bytecode, so run the analyzer with a JDK 17 runtime (the project still
-> compiles to Java 17 on any JDK 17+).
+> **Run the analyzer process on a JDK 17 runtime.** The *application under analysis*
+> can be compiled with a newer JDK — recompiling the benchmark to Java 21 bytecode
+> (major 65) and scanning it yields identical results. The JDK 17 requirement is on
+> the analyzer's own process (Tai-e's invokedynamic handling trips on the JDK 21
+> runtime library), not on the bytecode version of the code being scanned.
 
 A custom `--config` is **merged** onto the built-in rules (use `--no-default-config`
 to replace them instead).
@@ -436,7 +438,7 @@ Static analysis has inherent limits. For this project:
 - **Spring dynamic proxies** (AOP / CGLib) introduce indirection that may break the call graph
 - **Entity / DTO field tracking** — sources are `String`-only (a `@Repository`/`@FeignClient` returning a DTO whose getter is later read is not followed), a deliberate precision-over-recall choice
 - **Complex lambdas / method references** — partial coverage via Tai-e
-- **The taint analysis runs on JDK 17** — Tai-e 0.5.1 cannot read JDK 21 bytecode
+- **The taint analysis *process* runs on JDK 17** — it analyzes applications built with newer JDKs fine (verified on Java 21 bytecode); the JDK 17 requirement is the tool's own runtime, not a limit on the scanned code
 
 Each release documents its limitations explicitly, alongside the test cases that exercise them.
 
